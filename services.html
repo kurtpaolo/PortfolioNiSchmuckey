@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Schmuckey · Services</title>
+  <meta name="description" content="Editing Services & Creative Offerings by Schmuckey. Viral short-form content, Roblox game promotional videos, cinematic trailers, and montages.">
+  <meta name="theme-color" content="#0b0f19">
+  
+  <!-- Google Fonts: Inter & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome 6 Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              cyan: '#06b6d4',
+              cyanLight: '#22d3ee',
+              blue: '#2563eb',
+              blueDark: '#1d4ed8',
+              slateBg: '#0b0f19',
+              slateCard: '#0f172a',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            heading: ['Outfit', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-[#0b0f19] text-slate-100 antialiased selection:bg-cyan-500 selection:text-black">
+
+  <!-- Glow blobs in the background -->
+  <div class="ambient-glow-cyan top-[-80px] right-[-100px]"></div>
+  <div class="ambient-glow-blue top-[600px] left-[-120px]"></div>
+
+  <!-- Top navigation bar -->
+  <header class="sticky top-0 z-40 w-full backdrop-blur-xl bg-[#0b0f19]/90 border-b border-cyan-500/20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-20">
+        
+        <!-- Brand Logo -->
+        <a href="index.html" class="flex items-center gap-3 group">
+          <div class="w-11 h-11 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/30 group-hover:scale-105 transition-transform duration-300">
+            <i class="fa-solid fa-play text-white text-lg ml-0.5 group-hover:rotate-12 transition-transform"></i>
+          </div>
+          <div class="flex flex-col text-left">
+            <span class="font-heading font-black text-[20px] tracking-wide text-white leading-none">SCHMUCK<span class="gradient-text">EY</span></span>
+            <span class="text-[12px] font-semibold text-cyan-400 mt-1 leading-none tracking-normal select-none">&quot;i miss you, be well&quot;</span>
+          </div>
+        </a>
+
+        <!-- Desktop Navigation Links -->
+        <nav class="hidden md:flex items-center gap-8 text-sm font-medium">
+          <a href="index.html" class="text-slate-300 hover:text-cyan-400 transition-colors duration-200">Home</a>
+          <a href="services.html" class="text-cyan-400 font-semibold transition-colors duration-200">Services</a>
+          <a href="about.html" class="text-slate-300 hover:text-cyan-400 transition-colors duration-200">About</a>
+          <a href="contact.html" class="text-slate-300 hover:text-cyan-400 transition-colors duration-200">Contact</a>
+        </nav>
+
+        <!-- Carrd link and Discord button -->
+        <div class="hidden md:flex items-center gap-3">
+          <a href="https://schmuckey.carrd.co" target="_blank" rel="noopener noreferrer" class="text-xs text-slate-400 hover:text-cyan-300 transition-colors flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/60 border border-slate-700/60">
+            <i class="fa-solid fa-arrow-up-right-from-square text-[11px]"></i>
+            <span>Carrd Portfolio</span>
+          </a>
+          <a href="contact.html" class="gradient-btn px-4 py-2 rounded-xl text-sm font-bold text-white shadow-lg flex items-center gap-2">
+            <i class="fa-brands fa-discord text-base"></i>
+            <span>schmuck404</span>
+          </a>
+        </div>
+
+        <!-- Mobile Menu Button -->
+        <div class="md:hidden">
+          <button id="mobile-menu-btn" type="button" class="p-2 rounded-lg bg-slate-900 border border-cyan-500/30 text-slate-300 hover:text-cyan-400 focus:outline-none" aria-label="Toggle menu">
+            <i id="menu-icon-open" class="fa-solid fa-bars text-xl"></i>
+            <i id="menu-icon-close" class="fa-solid fa-xmark text-xl hidden"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile Dropdown Menu -->
+    <div id="mobile-nav-menu" class="hidden md:hidden bg-slate-900/95 border-b border-cyan-500/20 px-4 pt-2 pb-6 space-y-3">
+      <a href="index.html" class="block px-3 py-2 rounded-md text-base font-medium text-slate-300 hover:text-cyan-400 hover:bg-slate-800/60">Home</a>
+      <a href="services.html" class="block px-3 py-2 rounded-md text-base font-semibold text-cyan-400 bg-cyan-950/40 border-l-2 border-cyan-400">Services</a>
+      <a href="about.html" class="block px-3 py-2 rounded-md text-base font-medium text-slate-300 hover:text-cyan-400 hover:bg-slate-800/60">About</a>
+      <a href="contact.html" class="block px-3 py-2 rounded-md text-base font-medium text-slate-300 hover:text-cyan-400 hover:bg-slate-800/60">Contact</a>
+      <div class="pt-3 border-t border-slate-800 flex flex-col gap-2">
+        <a href="contact.html" class="gradient-btn text-center py-2.5 rounded-lg text-sm font-semibold text-white">
+          <i class="fa-brands fa-discord mr-2"></i>Discord: schmuck404
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- Hero header section -->
+    <section class="py-16 md:py-10 text-center">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-xs font-bold uppercase tracking-wider mb-4">
+          What I Can Do For You
+        </div>
+        <h1 class="font-heading font-black text-4xl sm:text-6xl text-white tracking-tight">
+          Editing Services & <span class="gradient-text">Creative Offerings</span>
+        </h1>
+        <p class="text-slate-300 text-base sm:text-lg max-w-2xl mx-auto mt-4 leading-relaxed">
+          From making <strong>Viral YouTube Shorts</strong> and <strong>TikToks</strong> to Roblox Game <strong>Promotional Videos</strong>, <strong>Cinematic Trailers</strong>, and <strong>Montage</strong>, tailored to make your content <strong>pop</strong>.
+        </p>
+      </div>
+    </section>
+
+    <!-- Cards showing what editing services I offer -->
+    <section class="pb-20">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+
+          <!-- 1. Short-form edits (Shorts, TikToks, Reels) -->
+          <div class="glass-card rounded-2xl p-6 sm:p-7 border border-cyan-500/20 hover:border-cyan-400/50 flex flex-col justify-between transition-all">
+            <div>
+              <div class="w-14 h-14 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 text-2xl mb-6">
+                <i class="fa-solid fa-mobile-screen-button"></i>
+              </div>
+              <h3 class="font-heading font-black text-xl sm:text-2xl text-white mb-3">
+                Short-Form Content
+              </h3>
+              <p class="text-slate-300 text-sm leading-relaxed mb-6">
+                Engineered for viewer retention across YouTube Shorts, TikTok, and Instagram Reels. Includes rapid pacing, sound-effect timing, animated text, and hook design.
+              </p>
+              <ul class="space-y-2.5 text-xs text-slate-300 border-t border-slate-800 pt-5">
+                <li class="flex items-center gap-2">
+                  <i class="fa-solid fa-check text-cyan-400"></i>
+                  <span>Contributed to over <strong>14M+ views</strong> in short-form contents</span>
+                </li>
+                <li class="flex items-center gap-2">
+                  <i class="fa-solid fa-check text-cyan-400"></i>
+                  <span>Retention-focused cuts & visual interruptions</span>
+                </li>
+                <li class="flex items-center gap-2">
+                  <i class="fa-solid fa-check text-cyan-400"></i>
+                  <span>Optimized vertical 9:16 delivery</span>
+                </li>
+              </ul>
+            </div>
+            <div class="mt-8 pt-4 border-t border-slate-800 flex items-center justify-between">
+              <a href="index.html#sample-shorts" class="text-cyan-400 hover:text-cyan-300 text-xs font-bold flex items-center gap-1">
+                View Samples <i class="fa-solid fa-arrow-right text-[10px]"></i>
+              </a>
+            </div>
+          </div>
+
+          <!-- 2. Roblox game promos and content -->
+          <div class="glass-card rounded-2xl p-6 sm:p-7 border border-emerald-500/20 hover:border-emerald-400/50 flex flex-col justify-between transition-all">
+            <div>
+              <div class="w-14 h-14 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-2xl mb-6">
+                <i class="fa-solid fa-cubes"></i>
+              </div>
+              <h3 class="font-heading font-black text-xl sm:text-2xl text-white mb-3">
+                Roblox Promomotional              </h3>
+              <p class="text-slate-300 text-sm leading-relaxed mb-6">
+                Promotional videos, update trailers, and showcases created for roblox games, and studios. As an active Roblox Creator, I build hype to boost player visits.
+              </p>
+              <ul class="space-y-2.5 text-xs text-slate-300 border-t border-slate-800 pt-5">
+                <li class="flex items-center gap-2">
+                  <i class="fa-solid fa-check text-emerald-400"></i>
+                  <span>Game update trailers & release promos</span>
+                </li>
+                <li class="flex items-center gap-2">
+                  <i class="fa-solid fa-check text-emerald-400"></i>
+                  <span>Reach wider potential players & build game identity</span>
+                </li>
+                <li class="flex items-center gap-2">
+                  <i class="fa-solid fa-check text-emerald-400"></i>
+                  <span>Community-tailored edits for TikTok</span>
+                </li>
+              </ul>
+            </div>
+            <div class="mt-8 pt-4 border-t border-slate-800 flex items-center justify-between">
+              <a href="https://www.tiktok.com/@schmuck.ey" target="_blank" rel="noopener noreferrer" class="text-emerald-400 hover:text-emerald-300 text-xs font-bold flex items-center gap-1">
+                Visit TikTok <i class="fa-solid fa-arrow-right text-[10px]"></i>
+              </a>
+            </div>
+          </div>
+
+          <!-- 3. Cinematic trailers and map showcases -->
+          <div class="glass-card rounded-2xl p-6 sm:p-7 border border-blue-500/20 hover:border-blue-400/50 flex flex-col justify-between transition-all">
+            <div>
+              <div class="w-14 h-14 rounded-xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400 text-2xl mb-6">
+                <i class="fa-solid fa-clapperboard"></i>
+              </div>
+              <h3 class="font-heading font-black text-xl sm:text-2xl text-white mb-3">
+                Cinematics & Trailers
+              </h3>
+              <p class="text-slate-300 text-sm leading-relaxed mb-6">
+                Cinematic camera work, atmospheric visuals, and polished effects for map showcases, game trailers, updates, and promotional releases.
+              </p>
+              <ul class="space-y-2.5 text-xs text-slate-300 border-t border-slate-800 pt-5">
+                <li class="flex items-center gap-2">
+                  <i class="fa-solid fa-check text-blue-400"></i>
+                  <span>Dynamic scene composition & camera choreography</span>
+                </li>
+                <li class="flex items-center gap-2">
+                  <i class="fa-solid fa-check text-blue-400"></i>
+                  <span>Epic soundtrack mixing & sound design</span>
+                </li>
+                <li class="flex items-center gap-2">
+                  <i class="fa-solid fa-check text-blue-400"></i>
+                  <span>Detailed showcase / highlights</span>
+                </li>
+              </ul>
+            </div>
+            <div class="mt-8 pt-4 border-t border-slate-800 flex items-center justify-between">
+              <a href="index.html#cinematic-trailers" class="text-blue-400 hover:text-blue-300 text-xs font-bold flex items-center gap-1">
+                View Samples <i class="fa-solid fa-arrow-right text-[10px]"></i>
+              </a>
+            </div>
+          </div>
+
+          <!-- 4. Gameplay montages and sneak peeks -->
+          <div class="glass-card rounded-2xl p-6 sm:p-7 border border-purple-500/20 hover:border-purple-400/50 flex flex-col justify-between transition-all">
+            <div>
+              <div class="w-14 h-14 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400 text-2xl mb-6">
+                <i class="fa-solid fa-gamepad"></i>
+              </div>
+              <h3 class="font-heading font-black text-xl sm:text-2xl text-white mb-3">
+                Gameplay Edits & Montages
+              </h3>
+              <p class="text-slate-300 text-sm leading-relaxed mb-6">
+                Action-packed video edits synced precisely to the rhythm of high-energy music. Perfect for fast-paced videos, highlight reels, and sneak peaks.
+              </p>
+              <ul class="space-y-2.5 text-xs text-slate-300 border-t border-slate-800 pt-5">
+                <li class="flex items-center gap-2">
+                  <i class="fa-solid fa-check text-purple-400"></i>
+                  <span>Precise beat matching and impact cues</span>
+                </li>
+                <li class="flex items-center gap-2">
+                  <i class="fa-solid fa-check text-purple-400"></i>
+                  <span>Motion blur, screen shakes, and custom effects</span>
+                </li>
+                <li class="flex items-center gap-2">
+                  <i class="fa-solid fa-check text-purple-400"></i>
+                  <span>Perfect pacing for engagement to hype viewers</span>
+                </li>
+              </ul>
+            </div>
+            <div class="mt-8 pt-4 border-t border-slate-800 flex items-center justify-between">
+              <a href="index.html#sample-shorts" class="text-purple-400 hover:text-purple-300 text-xs font-bold flex items-center gap-1">
+                View Samples <i class="fa-solid fa-arrow-right text-[10px]"></i>
+              </a>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- I have something to be added here (coming soon!) -->
+
+    <!-- Frequently asked questions accordion -->
+    <section class="py-20">
+      <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-12">
+          <h2 class="font-heading font-black text-3xl sm:text-4xl text-white uppercase">
+            Frequently Asked <span class="gradient-text">Questions</span>
+          </h2>
+          <p class="text-slate-400 text-sm mt-2">
+            Everything you need to know about working together.
+          </p>
+        </div>
+
+        <div class="space-y-4">
+          <!-- FAQ 1: How we start a project -->
+          <div class="glass-card rounded-xl border border-slate-800 overflow-hidden">
+            <button class="faq-header w-full p-5 text-left flex items-center justify-between text-slate-100 font-semibold text-sm sm:text-base hover:text-cyan-300 transition-colors">
+              <span>How do we discuss and start a project?</span>
+              <i class="faq-chevron fa-solid fa-chevron-down text-xs transition-transform duration-300"></i>
+            </button>
+            <div class="faq-body hidden px-5 pb-5 text-xs sm:text-sm text-slate-300 leading-relaxed border-t border-slate-800/60 pt-3">
+              The quickest way is to message me directly on Discord at <strong class="text-cyan-400 font-mono">schmuck404</strong>! Send over whatever you already have — an idea, reference, footage, or even just a “yo can you edittopa this?” and we’ll go from there..
+            </div>
+          </div>
+
+          <!-- FAQ 2: Sending raw footage -->
+          <div class="glass-card rounded-xl border border-slate-800 overflow-hidden">
+            <button class="faq-header w-full p-5 text-left flex items-center justify-between text-slate-100 font-semibold text-sm sm:text-base hover:text-cyan-300 transition-colors">
+              <span>How should I send my raw footage or reference clips?</span>
+              <i class="faq-chevron fa-solid fa-chevron-down text-xs transition-transform duration-300"></i>
+            </button>
+            <div class="faq-body hidden px-5 pb-5 text-xs sm:text-sm text-slate-300 leading-relaxed border-t border-slate-800/60 pt-3">
+              You can send Google Drive folders, Dropbox links, WeTransfer, or unlisted YouTube links for reference. If it's short-form gameplay or stream clips, any cloud link works perfectly.
+            </div>
+          </div>
+
+          <!-- FAQ 3: Video styles and formats -->
+          <div class="glass-card rounded-xl border border-slate-800 overflow-hidden">
+            <button class="faq-header w-full p-5 text-left flex items-center justify-between text-slate-100 font-semibold text-sm sm:text-base hover:text-cyan-300 transition-colors">
+              <span>What styles and formats can you create?</span>
+              <i class="faq-chevron fa-solid fa-chevron-down text-xs transition-transform duration-300"></i>
+            </button>
+            <div class="faq-body hidden px-5 pb-5 text-xs sm:text-sm text-slate-300 leading-relaxed border-t border-slate-800/60 pt-3">
+              I specialize in high-retention 9:16 Shorts (similar to my edits for YouTuber chiken), promotional videos and trailers for Roblox games & creators, 16:9 cinematic showcase trailers (like Western Map & Anime Universe), dynamic gameplay montages, and commentary edits.
+            </div>
+          </div>
+
+          <!-- FAQ 4: IT and dev projects -->
+          <div class="glass-card rounded-xl border border-slate-800 overflow-hidden">
+            <button class="faq-header w-full p-5 text-left flex items-center justify-between text-slate-100 font-semibold text-sm sm:text-base hover:text-cyan-300 transition-colors">
+              <span>What about IT and development projects?</span>
+              <i class="faq-chevron fa-solid fa-chevron-down text-xs transition-transform duration-300"></i>
+            </button>
+            <div class="faq-body hidden px-5 pb-5 text-xs sm:text-sm text-slate-300 leading-relaxed border-t border-slate-800/60 pt-3">
+              In addition to video editing, I'm involved in IT and tech projects. I have an upcoming unlisted video walkthrough demonstrating my IT projects that will be featured on this site. Feel free to contact me for tech-related queries.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Contact CTA at the bottom -->
+    <section class="py-16 text-center">
+      <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h2 class="font-heading font-black text-3xl sm:text-4xl text-white">
+          Ready to make something cool?
+        </h2>
+        <p class="text-slate-400 text-sm mt-2 mb-6">
+          I'm always up for the <span class="text-cyan-300 font-bold font-mono">task</span>!
+        </p>
+        <a href="contact.html" class="gradient-btn px-8 py-3.5 rounded-xl font-bold text-white inline-flex items-center gap-2 shadow-lg">
+          <i class="fa-brands fa-discord"></i>
+          <span>Contact Me</span>
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer section -->
+  <footer class="bg-slate-950 border-t border-slate-900 py-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6 text-xs text-slate-400">
+      <div class="flex items-center gap-3">
+        <span class="font-heading font-black text-lg text-white">
+          SCHMUCK<span class="gradient-text">EY</span>
+        </span>
+        <span class="text-slate-600">&bull;</span>
+        <span>Content Creator & Video Editor</span>
+      </div>
+
+      <div class="flex items-center gap-6">
+        <a href="index.html" class="hover:text-cyan-300 transition-colors">Home</a>
+        <a href="services.html" class="text-cyan-400 font-semibold">Services</a>
+        <a href="about.html" class="hover:text-cyan-300 transition-colors">About</a>
+        <a href="contact.html" class="hover:text-cyan-300 transition-colors">Contact</a>
+        <a href="https://schmuckey.carrd.co" target="_blank" rel="noopener noreferrer" class="hover:text-cyan-300 transition-colors">Carrd</a>
+      </div>
+
+      <div class="text-slate-500 flex items-center gap-3">
+        <span>&copy; <span class="current-year"></span> Schmuckey. All rights reserved.</span>
+        <a href="admin.html" class="text-slate-700 hover:text-cyan-400 transition-colors" title="Admin Portal (Restricted)"><i class="fa-solid fa-lock text-[11px]"></i></a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Back to Top Button -->
+  <button id="back-to-top" aria-label="Back to top" class="fixed bottom-6 right-6 z-40 w-11 h-11 rounded-xl bg-cyan-500/20 hover:bg-cyan-500 text-cyan-300 hover:text-black border border-cyan-500/40 flex items-center justify-center opacity-0 pointer-events-none transition-all shadow-lg">
+    <i class="fa-solid fa-arrow-up text-sm"></i>
+  </button>
+
+  <!-- jQuery 3.7.1 -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <!-- Main Script -->
+  <script src="js/main.js"></script>
+</body>
+</html>
