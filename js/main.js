@@ -394,11 +394,11 @@ $(document).ready(function () {
     sessionStorage.removeItem('schmuckey_admin_session');
   } catch (e) {}
 
-  // Secret shortcut to open admin login: Ctrl + Shift + A or Alt + A
+  // Secret shortcut to open app login: Ctrl + Shift + A or Alt + A
   $(document).on('keydown', function (e) {
     if ((e.ctrlKey && e.shiftKey && (e.key === 'A' || e.key === 'a')) || (e.altKey && (e.key === 'A' || e.key === 'a'))) {
       e.preventDefault();
-      window.location.href = 'admin.html';
+      window.location.href = 'app.html';
     }
   });
 

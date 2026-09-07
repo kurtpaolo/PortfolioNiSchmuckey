@@ -18,15 +18,16 @@ C:\Users\schmuck\WOW\
 ├── services.html           # Services Page
 ├── about.html              # About Page
 ├── contact.html            # Contact Page 
-├── admin.html              # Freelance Flow Admin
+├── app.html                # My App (Freelance Flow Workspace)
+├── admin.html              # Legacy redirect to app.html
 ├── serve.ps1               # Local web server script (runs on http://localhost:8000)
 ├── start-server.bat        # One-click website launch (This only works for Windows)
 ├── css/
 │   ├── style.css           # Portfolio styling
-│   └── admin.css           # Freelance Flow styling
+│   └── app.css             # Freelance Flow styling
 ├── js/
 │   ├── main.js             # Public site script
-│   └── admin.js            # Freelancer Flow admin controller
+│   └── app.js              # Freelancer Flow app controller
 └── assets/
     ├── images/             # Consists of images used for the website
     └── videos/             # Consists of thumbnail art from my original portfolio and youtube videos I edited for

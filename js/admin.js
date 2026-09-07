@@ -1,8 +1,8 @@
 /**
- * Freelance Flow - Admin panel controller
+ * Freelance Flow - Admin panel controller (MySQL Backend via PHP API)
  * 
- * Private dashboard to manage my video projects, promotional brand deals, and client revenue.
- * Data is saved in browser localStorage (mirrored from my Google Spreadsheet).
+ * Private dashboard to manage video projects, promotional brand deals, and client revenue.
+ * Data and authentication are securely persisted in local MySQL database ('portfolio_tracker').
  * 
  * Sections:
  * 1. Video Tracker - tracks video status, pay rate, payment status, raw footage, and youtube links
@@ -14,342 +14,199 @@
 (function () {
   'use strict';
 
-  // Login credentials (SHA-256 hashes for username "ky" and password "ky")
-  const TARGET_USER_HASH = '2076584e3f0868e790b7c97905f0d75a1af62da4f2ee3fba3db40504a686307c';
-  const TARGET_PASS_HASH = '2076584e3f0868e790b7c97905f0d75a1af62da4f2ee3fba3db40504a686307c';
-
-  const SESSION_KEY = 'schmuckey_admin_session';
-  const PROJECTS_STORAGE_KEY = 'schmuckey_projects_tracker_v1';
-  const LEGACY_PROJECTS_STORAGE_KEY = 'bludan_editor_tracker_v3';
-  const PROMOS_STORAGE_KEY = 'schmuckey_promos_tracker_v1';
+  // In-memory cache synced with MySQL
+  let cachedProjects = [];
+  let cachedPromos = [];
 
   function isPaidStatus(status) {
     return status === 'Paid' || status === 'Completely Paid';
   }
 
-  // Initial video projects copied from my Google Spreadsheet (12 paid at $12, 7 unpaid at $15)
-  const INITIAL_PROJECTS = [
-    {
-      id: 'vid_01',
-      title: 'Bad Customer - Michael',
-      clientName: 'bludan',
-      service: 'Video Editor',
-      price: 12,
-      budget: 12,
-      paidAmount: 12,
-      paymentStatus: 'Paid',
-      status: 'Published',
-      youtubeLink: 'https://youtube.com/shorts/YIf-bCycNYI',
-      rawFilesUrl: 'https://drive.google.com/drive/folders/1evx2DKcVq6m1---AuimukuVUrg7mBQAw',
-      createdAt: '2026-08-12'
-    },
-    {
-      id: 'vid_02',
-      title: 'Rude Girl At The Grocery',
-      clientName: 'bludan',
-      service: 'Video Editor',
-      price: 12,
-      budget: 12,
-      paidAmount: 12,
-      paymentStatus: 'Paid',
-      status: 'Published',
-      youtubeLink: 'https://youtube.com/shorts/6OBuvsC492M',
-      rawFilesUrl: 'https://drive.google.com/drive/folders/1XR3KKmtElNJcvWS9_YUidWCFgoJPoa5U',
-      createdAt: '2026-08-14'
-    },
-    {
-      id: 'vid_03',
-      title: 'Hotel Lobby',
-      clientName: 'bludan',
-      service: 'Video Editor',
-      price: 12,
-      budget: 12,
-      paidAmount: 12,
-      paymentStatus: 'Paid',
-      status: 'Published',
-      youtubeLink: 'https://youtube.com/shorts/sH87GfQFejQ',
-      rawFilesUrl: 'https://drive.google.com/file/d/1HDkp9VEiSf2XTpxvKVVu2Yyx9Gqh_P6C/view',
-      createdAt: '2026-08-16'
-    },
-    {
-      id: 'vid_04',
-      title: 'Plane Story',
-      clientName: 'bludan',
-      service: 'Video Editor',
-      price: 12,
-      budget: 12,
-      paidAmount: 12,
-      paymentStatus: 'Paid',
-      status: 'Published',
-      youtubeLink: 'https://youtube.com/shorts/4tBL1ovfo0w',
-      rawFilesUrl: 'https://drive.google.com/drive/folders/1HIFnCWpEen2Yjuf_-AoD77V35b2xGaKT',
-      createdAt: '2026-08-18'
-    },
-    {
-      id: 'vid_05',
-      title: "Liam's Story",
-      clientName: 'bludan',
-      service: 'Video Editor',
-      price: 12,
-      budget: 12,
-      paidAmount: 12,
-      paymentStatus: 'Paid',
-      status: 'Published',
-      youtubeLink: 'https://youtube.com/shorts/J6cNaCOeuaA',
-      rawFilesUrl: 'https://drive.google.com/drive/folders/1xOkWRxB609UHX2bpxh5mOo8TkvoYk5RE',
-      createdAt: '2026-08-20'
-    },
-    {
-      id: 'vid_06',
-      title: 'Biggest Man In The Room',
-      clientName: 'bludan',
-      service: 'Video Editor',
-      price: 12,
-      budget: 12,
-      paidAmount: 12,
-      paymentStatus: 'Paid',
-      status: 'Published',
-      youtubeLink: 'https://youtube.com/shorts/uWyhdtGFJaw',
-      rawFilesUrl: 'https://drive.google.com/drive/folders/1yR1Mhw48ltzfU_9EGLYD2VfhnIzKn7zL',
-      createdAt: '2026-08-22'
-    },
-    {
-      id: 'vid_07',
-      title: 'Grocery Story',
-      clientName: 'bludan',
-      service: 'Video Editor',
-      price: 12,
-      budget: 12,
-      paidAmount: 12,
-      paymentStatus: 'Paid',
-      status: 'Published',
-      youtubeLink: 'https://youtube.com/shorts/I5jiuwrGDOk',
-      rawFilesUrl: 'https://drive.google.com/file/d/1oN5_oM9civP4iKr5aYJFC0A40mxSId-6/view',
-      createdAt: '2026-08-24'
-    },
-    {
-      id: 'vid_08',
-      title: 'Cinema Story',
-      clientName: 'bludan',
-      service: 'Video Editor',
-      price: 12,
-      budget: 12,
-      paidAmount: 12,
-      paymentStatus: 'Paid',
-      status: 'Published',
-      youtubeLink: 'https://youtube.com/shorts/Mnnd3hpsvGs',
-      rawFilesUrl: 'https://drive.google.com/file/d/12AcuzC0HKGJEYGL1O31Sm9mTi_4XZmjr/view',
-      createdAt: '2026-08-26'
-    },
-    {
-      id: 'vid_09',
-      title: 'Supermarket',
-      clientName: 'bludan',
-      service: 'Video Editor',
-      price: 12,
-      budget: 12,
-      paidAmount: 12,
-      paymentStatus: 'Paid',
-      status: 'Published',
-      youtubeLink: 'https://youtube.com/shorts/aeqoPDfGSYI',
-      rawFilesUrl: 'https://drive.google.com/drive/folders/1eWHkdjrtzjDb9SoH1QwFaohR95sQVluG',
-      createdAt: '2026-08-28'
-    },
-    {
-      id: 'vid_10',
-      title: 'Father & Son Accident',
-      clientName: 'bludan',
-      service: 'Video Editor',
-      price: 12,
-      budget: 12,
-      paidAmount: 12,
-      paymentStatus: 'Paid',
-      status: 'Published',
-      youtubeLink: 'https://youtube.com/shorts/M6wQoJ8yJTs',
-      rawFilesUrl: 'https://drive.google.com/drive/folders/1xaL5Fa2O6VtZR5u0o_9YVrXCBhjFBrXG',
-      createdAt: '2026-08-30'
-    },
-    {
-      id: 'vid_11',
-      title: "Marcus Doesn't Feel Pain",
-      clientName: 'bludan',
-      service: 'Video Editor',
-      price: 12,
-      budget: 12,
-      paidAmount: 12,
-      paymentStatus: 'Paid',
-      status: 'Published',
-      youtubeLink: 'https://youtube.com/shorts/O3GNtiAqfGE',
-      rawFilesUrl: 'https://drive.google.com/drive/folders/1Q2Js4lgdWZL4LiHAGcAtt2CemDZ9s1FN',
-      createdAt: '2026-09-01'
-    },
-    {
-      id: 'vid_12',
-      title: 'Elevator Incident',
-      clientName: 'bludan',
-      service: 'Video Editor',
-      price: 12,
-      budget: 12,
-      paidAmount: 12,
-      paymentStatus: 'Paid',
-      status: 'Published',
-      youtubeLink: 'https://youtube.com/shorts/YzcEz5mKmbQ',
-      rawFilesUrl: 'https://drive.google.com/drive/folders/1P6UmPweLPlpGccvzh6WgDvxtWoZDchBL',
-      createdAt: '2026-09-02'
-    },
-    // Unpaid video batch ($15 per video)
-    {
-      id: 'vid_13',
-      title: 'Alex Fear Story',
-      clientName: 'bludan',
-      service: 'Video Editor',
-      price: 15,
-      budget: 15,
-      paidAmount: 0,
-      paymentStatus: 'Unpaid',
-      status: 'Published',
-      youtubeLink: 'https://youtube.com/shorts/-CZoRBssi2A',
-      rawFilesUrl: 'https://drive.google.com/drive/folders/1e4831QZuvRSLNOAoSl6qCeUYavmN63c5?usp=sharing',
-      createdAt: '2026-09-03'
-    },
-    {
-      id: 'vid_14',
-      title: 'Alex Fear Story Revision',
-      clientName: 'bludan',
-      service: 'Video Editor',
-      price: 15,
-      budget: 15,
-      paidAmount: 0,
-      paymentStatus: 'Unpaid',
-      status: 'Published',
-      youtubeLink: 'https://youtube.com/shorts/k_E8qSr6knY',
-      rawFilesUrl: 'https://drive.google.com/drive/folders/1e4831QZuvRSLNOAoSl6qCeUYavmN63c5?usp=drive_link',
-      createdAt: '2026-09-03'
-    },
-    {
-      id: 'vid_15',
-      title: 'Noah Time Freeze',
-      clientName: 'bludan',
-      service: 'Video Editor',
-      price: 15,
-      budget: 15,
-      paidAmount: 0,
-      paymentStatus: 'Unpaid',
-      status: 'Published',
-      youtubeLink: 'https://youtube.com/shorts/M_nHo0ApiW4',
-      rawFilesUrl: 'https://drive.google.com/drive/folders/1j9_i_T1S1fmdl7ogZSD4kMdfmlKL4aSq',
-      createdAt: '2026-09-04'
-    },
-    {
-      id: 'vid_16',
-      title: 'Biggest Man on a Train',
-      clientName: 'bludan',
-      service: 'Video Editor',
-      price: 15,
-      budget: 15,
-      paidAmount: 0,
-      paymentStatus: 'Unpaid',
-      status: 'Published',
-      youtubeLink: 'https://youtube.com/shorts/L-s3WTuHnyU',
-      rawFilesUrl: 'https://drive.google.com/drive/folders/1exCHhqV8c8D-Qhf6FUH9Ch9rQgTR_1qe?usp=sharing',
-      createdAt: '2026-09-04'
-    },
-    {
-      id: 'vid_17',
-      title: '100 Years of Life',
-      clientName: 'bludan',
-      service: 'Video Editor',
-      price: 15,
-      budget: 15,
-      paidAmount: 0,
-      paymentStatus: 'Unpaid',
-      status: 'Published',
-      youtubeLink: 'https://youtube.com/shorts/VzZXJ7by03g',
-      rawFilesUrl: 'https://drive.google.com/drive/folders/1Y07JxzsiC0r3liPRue0qI9BwY-5q539l',
-      createdAt: '2026-09-05'
-    },
-    {
-      id: 'vid_18',
-      title: 'Parking Lot',
-      clientName: 'bludan',
-      service: 'Video Editor',
-      price: 15,
-      budget: 15,
-      paidAmount: 0,
-      paymentStatus: 'Unpaid',
-      status: 'Published',
-      youtubeLink: 'https://youtube.com/shorts/kQQP7NGhXHk',
-      rawFilesUrl: 'https://drive.google.com/drive/folders/17-Zo1sbWvOBJNa5v_2XR99MoVCgsgPds?usp=sharing',
-      createdAt: '2026-09-05'
-    },
-    {
-      id: 'vid_19',
-      title: 'Bridge Incident',
-      clientName: 'bludan',
-      service: 'Video Editor',
-      price: 15,
-      budget: 15,
-      paidAmount: 0,
-      paymentStatus: 'Unpaid',
-      status: 'Published',
-      youtubeLink: 'https://youtube.com/shorts/wAIOnX3_0XA',
-      rawFilesUrl: 'https://drive.google.com/file/d/12NqlpdZ5vqGMeUyYCBUsUvB8U8HQa22t/view',
-      createdAt: '2026-09-05'
-    }
-  ];
-
-  // Helper function to hash text using SHA-256 for login checking
-  async function computeSHA256(text) {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(text);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
-  }
-
-  // LocalStorage helpers for video projects
   function getProjects() {
-    let raw = localStorage.getItem(PROJECTS_STORAGE_KEY);
-    if (!raw) {
-      raw = localStorage.getItem(LEGACY_PROJECTS_STORAGE_KEY);
-      if (raw) {
-        localStorage.setItem(PROJECTS_STORAGE_KEY, raw);
-      }
-    }
-    if (!raw) {
-      localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(INITIAL_PROJECTS));
-      return INITIAL_PROJECTS;
-    }
-    try {
-      const parsed = JSON.parse(raw);
-      return parsed.map(p => {
-        if (!p.service) p.service = 'Video Editor';
-        if (!p.status) p.status = 'Published';
-        if (p.price === undefined) p.price = p.budget || 15;
-        if (p.budget === undefined) p.budget = p.price;
-        return p;
-      });
-    } catch (e) {
-      return INITIAL_PROJECTS;
-    }
+    return cachedProjects;
   }
 
-  function saveProjects(projects) {
-    localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(projects));
-  }
-
-  // LocalStorage helpers for promotional deals
   function getPromos() {
-    const raw = localStorage.getItem(PROMOS_STORAGE_KEY);
-    if (!raw) return [];
+    return cachedPromos;
+  }
+
+  // ==========================================
+  // API Synchronization Layer (MySQL Backend)
+  // ==========================================
+
+  async function syncAllData() {
     try {
-      return JSON.parse(raw);
-    } catch (e) {
-      return [];
+      const [projRes, promoRes] = await Promise.all([
+        fetch('api/projects.php', { credentials: 'same-origin' }),
+        fetch('api/promos.php', { credentials: 'same-origin' })
+      ]);
+
+      if (projRes.status === 401 || promoRes.status === 401) {
+        showLogin();
+        return;
+      }
+
+      const [projJson, promoJson] = await Promise.all([projRes.json(), promoRes.json()]);
+
+      if (projJson.success && Array.isArray(projJson.data)) {
+        cachedProjects = projJson.data;
+      }
+      if (promoJson.success && Array.isArray(promoJson.data)) {
+        cachedPromos = promoJson.data;
+      }
+
+      renderAll();
+    } catch (err) {
+      console.error('Failed to sync with MySQL:', err);
     }
   }
 
-  function savePromos(promos) {
-    localStorage.setItem(PROMOS_STORAGE_KEY, JSON.stringify(promos));
+  async function createProjectApi(data) {
+    try {
+      const res = await fetch('api/projects.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+        credentials: 'same-origin'
+      });
+      const json = await res.json();
+      if (json.success && json.data) {
+        cachedProjects.unshift(json.data);
+        renderAll();
+        return json.data;
+      }
+    } catch (err) {
+      console.error('Failed to create project in database:', err);
+    }
+  }
+
+  async function updateProjectApi(id, data) {
+    try {
+      const res = await fetch('api/projects.php', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, ...data }),
+        credentials: 'same-origin'
+      });
+      const json = await res.json();
+      if (json.success && json.data) {
+        const idx = cachedProjects.findIndex(p => p.id === id);
+        if (idx !== -1) cachedProjects[idx] = json.data;
+        renderAll();
+        return json.data;
+      }
+    } catch (err) {
+      console.error('Failed to update project in database:', err);
+    }
+  }
+
+  async function patchProjectApi(id, patchData) {
+    try {
+      const res = await fetch('api/projects.php', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, ...patchData }),
+        credentials: 'same-origin'
+      });
+      const json = await res.json();
+      if (json.success && json.data) {
+        const idx = cachedProjects.findIndex(p => p.id === id);
+        if (idx !== -1) cachedProjects[idx] = json.data;
+        return json.data;
+      }
+    } catch (err) {
+      console.error('Failed to patch project in database:', err);
+    }
+  }
+
+  async function deleteProjectApi(id) {
+    try {
+      const res = await fetch(`api/projects.php?id=${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+        credentials: 'same-origin'
+      });
+      const json = await res.json();
+      if (json.success) {
+        cachedProjects = cachedProjects.filter(p => p.id !== id);
+        renderAll();
+      }
+    } catch (err) {
+      console.error('Failed to delete project from database:', err);
+    }
+  }
+
+  async function createPromoApi(data) {
+    try {
+      const res = await fetch('api/promos.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+        credentials: 'same-origin'
+      });
+      const json = await res.json();
+      if (json.success && json.data) {
+        cachedPromos.unshift(json.data);
+        renderAll();
+        return json.data;
+      }
+    } catch (err) {
+      console.error('Failed to create promo in database:', err);
+    }
+  }
+
+  async function updatePromoApi(id, data) {
+    try {
+      const res = await fetch('api/promos.php', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, ...data }),
+        credentials: 'same-origin'
+      });
+      const json = await res.json();
+      if (json.success && json.data) {
+        const idx = cachedPromos.findIndex(pr => pr.id === id);
+        if (idx !== -1) cachedPromos[idx] = json.data;
+        renderAll();
+        return json.data;
+      }
+    } catch (err) {
+      console.error('Failed to update promo in database:', err);
+    }
+  }
+
+  async function patchPromoApi(id, patchData) {
+    try {
+      const res = await fetch('api/promos.php', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, ...patchData }),
+        credentials: 'same-origin'
+      });
+      const json = await res.json();
+      if (json.success && json.data) {
+        const idx = cachedPromos.findIndex(pr => pr.id === id);
+        if (idx !== -1) cachedPromos[idx] = json.data;
+        return json.data;
+      }
+    } catch (err) {
+      console.error('Failed to patch promo in database:', err);
+    }
+  }
+
+  async function deletePromoApi(id) {
+    try {
+      const res = await fetch(`api/promos.php?id=${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+        credentials: 'same-origin'
+      });
+      const json = await res.json();
+      if (json.success) {
+        cachedPromos = cachedPromos.filter(pr => pr.id !== id);
+        renderAll();
+      }
+    } catch (err) {
+      console.error('Failed to delete promo from database:', err);
+    }
   }
 
   // Search filter query state
@@ -375,15 +232,9 @@
     initTabNavigation();
     initProjectManagement();
     initPromosManagement();
+    initSecurityManagement();
     initSelectPlaceholders();
     setupStrictExit();
-
-    // Update tables if data changes in another open tab
-    window.addEventListener('storage', (e) => {
-      if (e.key === PROJECTS_STORAGE_KEY || e.key === LEGACY_PROJECTS_STORAGE_KEY || e.key === PROMOS_STORAGE_KEY) {
-        renderAll();
-      }
-    });
   });
 
   // Style dropdown placeholder options nicely
@@ -404,51 +255,225 @@
     });
   }
 
-  // Automatically log out when leaving the page or closing the tab
+  // Automatically log out when leaving the page or locking
   function setupStrictExit() {
     window.addEventListener('beforeunload', () => {
-      sessionStorage.removeItem(SESSION_KEY);
+      fetch('api/auth.php?action=logout', { method: 'POST', credentials: 'same-origin', keepalive: true });
     });
     window.addEventListener('pagehide', () => {
-      sessionStorage.removeItem(SESSION_KEY);
+      fetch('api/auth.php?action=logout', { method: 'POST', credentials: 'same-origin', keepalive: true });
     });
 
     document.querySelectorAll('.exit-to-portfolio-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
+      btn.addEventListener('click', async (e) => {
         e.preventDefault();
-        sessionStorage.removeItem(SESSION_KEY);
+        try {
+          await fetch('api/auth.php?action=logout', { method: 'POST', credentials: 'same-origin' });
+        } catch (err) {}
         window.location.href = 'index.html';
       });
     });
 
     document.querySelectorAll('.lock-console-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
+      btn.addEventListener('click', async (e) => {
         e.preventDefault();
-        sessionStorage.removeItem(SESSION_KEY);
+        try {
+          await fetch('api/auth.php?action=logout', { method: 'POST', credentials: 'same-origin' });
+        } catch (err) {}
         showLogin('Console locked. Enter credentials to unlock.', false);
       });
     });
   }
 
-  // Check if user is currently logged in
-  function checkSession() {
-    const rawSession = sessionStorage.getItem(SESSION_KEY);
-    if (!rawSession) {
-      showLogin();
-      return;
-    }
-    try {
-      const session = JSON.parse(rawSession);
-      if (session.userHash === TARGET_USER_HASH) {
-        showDashboard();
-      } else {
-        sessionStorage.removeItem(SESSION_KEY);
-        showLogin();
+  // Account Settings: Change Username and Change Password backed by MySQL
+  function initSecurityManagement() {
+    const $btnOpen = document.getElementById('btn-open-security-modal');
+    const $modal = document.getElementById('security-modal-dialog');
+    const $btnClose = document.getElementById('btn-close-security-modal');
+    const $cancelBtns = document.querySelectorAll('.btn-cancel-account-modal');
+    const $feedback = document.getElementById('security-modal-feedback');
+
+    // Tab buttons & forms
+    const $tabUsername = document.getElementById('tab-opt-username');
+    const $tabPassword = document.getElementById('tab-opt-password');
+    const $formUsername = document.getElementById('form-change-username');
+    const $formPassword = document.getElementById('form-change-password');
+
+    // Username submit elements
+    const $btnSubmitUser = document.getElementById('btn-submit-username');
+    const $userBtnText = document.getElementById('username-btn-text');
+    const $userBtnSpinner = document.getElementById('username-btn-spinner');
+
+    // Password submit elements
+    const $btnSubmitPass = document.getElementById('btn-submit-password');
+    const $passBtnText = document.getElementById('pass-btn-text');
+    const $passBtnSpinner = document.getElementById('pass-btn-spinner');
+
+    function selectTab(tab) {
+      if (!$formUsername || !$formPassword || !$tabUsername || !$tabPassword) return;
+      if ($feedback) {
+        $feedback.className = 'hidden';
+        $feedback.textContent = '';
       }
-    } catch (e) {
-      sessionStorage.removeItem(SESSION_KEY);
-      showLogin();
+
+      if (tab === 'username') {
+        $formUsername.classList.remove('hidden');
+        $formPassword.classList.add('hidden');
+        $tabUsername.className = 'account-setting-tab flex-1 py-2 px-3 rounded-lg font-bold transition-all bg-cyan-950 text-cyan-300 border border-cyan-500/40 shadow-sm flex items-center justify-center gap-2 cursor-pointer';
+        $tabPassword.className = 'account-setting-tab flex-1 py-2 px-3 rounded-lg font-bold transition-all text-slate-400 hover:text-white flex items-center justify-center gap-2 cursor-pointer';
+        const uInput = document.getElementById('input-new-username');
+        if (uInput) setTimeout(() => uInput.focus(), 100);
+      } else {
+        $formUsername.classList.add('hidden');
+        $formPassword.classList.remove('hidden');
+        $tabPassword.className = 'account-setting-tab flex-1 py-2 px-3 rounded-lg font-bold transition-all bg-cyan-950 text-cyan-300 border border-cyan-500/40 shadow-sm flex items-center justify-center gap-2 cursor-pointer';
+        $tabUsername.className = 'account-setting-tab flex-1 py-2 px-3 rounded-lg font-bold transition-all text-slate-400 hover:text-white flex items-center justify-center gap-2 cursor-pointer';
+        const pInput = document.getElementById('input-pass-current');
+        if (pInput) setTimeout(() => pInput.focus(), 100);
+      }
     }
+
+    if ($tabUsername) $tabUsername.addEventListener('click', () => selectTab('username'));
+    if ($tabPassword) $tabPassword.addEventListener('click', () => selectTab('password'));
+
+    function openModal() {
+      if ($formUsername) $formUsername.reset();
+      if ($formPassword) $formPassword.reset();
+      selectTab('username');
+      if ($modal) $modal.classList.remove('hidden');
+    }
+
+    function closeModal() {
+      if ($modal) $modal.classList.add('hidden');
+    }
+
+    if ($btnOpen) $btnOpen.addEventListener('click', openModal);
+    if ($btnClose) $btnClose.addEventListener('click', closeModal);
+    $cancelBtns.forEach(btn => btn.addEventListener('click', closeModal));
+
+    if ($modal) {
+      $modal.addEventListener('click', (e) => {
+        if (e.target === $modal) closeModal();
+      });
+    }
+
+    // Handle Change Username submit (requires current password)
+    if ($formUsername) {
+      $formUsername.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const currentPass = document.getElementById('input-user-current-pass')?.value || '';
+        const newUsername = document.getElementById('input-new-username')?.value.trim() || '';
+
+        if (!currentPass || !newUsername) {
+          showFeedback('Both current password and new username are required.', true);
+          return;
+        }
+
+        if (newUsername.length < 2) {
+          showFeedback('Username must be at least 2 characters.', true);
+          return;
+        }
+
+        if ($userBtnText) $userBtnText.classList.add('hidden');
+        if ($userBtnSpinner) $userBtnSpinner.classList.remove('hidden');
+        if ($btnSubmitUser) $btnSubmitUser.disabled = true;
+
+        try {
+          const res = await fetch('api/auth.php?action=change_username', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ currentPassword: currentPass, newUsername: newUsername }),
+            credentials: 'same-origin'
+          });
+
+          const json = await res.json();
+
+          if (res.ok && json.success) {
+            closeModal();
+            $formUsername.reset();
+            showLogin('Username updated successfully. Please enter your new credentials to unlock.', false);
+          } else {
+            showFeedback(json.error || 'Failed to update username.', true);
+          }
+        } catch (err) {
+          showFeedback('Connection error: ' + err.message, true);
+        } finally {
+          if ($userBtnText) $userBtnText.classList.remove('hidden');
+          if ($userBtnSpinner) $userBtnSpinner.classList.add('hidden');
+          if ($btnSubmitUser) $btnSubmitUser.disabled = false;
+        }
+      });
+    }
+
+    // Handle Change Password submit
+    if ($formPassword) {
+      $formPassword.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const oldPass = document.getElementById('input-pass-current')?.value || '';
+        const newPass = document.getElementById('input-pass-new')?.value || '';
+        const confirmPass = document.getElementById('input-pass-confirm')?.value || '';
+
+        if (!oldPass || !newPass || !confirmPass) {
+          showFeedback('All fields are required.', true);
+          return;
+        }
+
+        if (newPass !== confirmPass) {
+          showFeedback('New passwords do not match.', true);
+          return;
+        }
+
+        if (newPass.length < 2) {
+          showFeedback('Password must be at least 2 characters.', true);
+          return;
+        }
+
+        if ($passBtnText) $passBtnText.classList.add('hidden');
+        if ($passBtnSpinner) $passBtnSpinner.classList.remove('hidden');
+        if ($btnSubmitPass) $btnSubmitPass.disabled = true;
+
+        try {
+          const res = await fetch('api/auth.php?action=change_password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ oldPassword: oldPass, newPassword: newPass }),
+            credentials: 'same-origin'
+          });
+
+          const json = await res.json();
+
+          if (res.ok && json.success) {
+            closeModal();
+            $formPassword.reset();
+            showLogin('Password updated successfully. Please enter your new credentials to unlock.', false);
+          } else {
+            showFeedback(json.error || 'Failed to update password.', true);
+          }
+        } catch (err) {
+          showFeedback('Connection error: ' + err.message, true);
+        } finally {
+          if ($passBtnText) $passBtnText.classList.remove('hidden');
+          if ($passBtnSpinner) $passBtnSpinner.classList.add('hidden');
+          if ($btnSubmitPass) $btnSubmitPass.disabled = false;
+        }
+      });
+    }
+
+    function showFeedback(msg, isError) {
+      if (!$feedback) return;
+      $feedback.textContent = msg;
+      $feedback.className = isError
+        ? 'block mb-4 p-2.5 rounded-lg text-xs font-mono text-rose-400 bg-rose-950/50 border border-rose-500/40'
+        : 'block mb-4 p-2.5 rounded-lg text-xs font-mono text-emerald-300 bg-emerald-950/60 border border-emerald-500/40';
+    }
+  }
+
+  // Require credentials on every entry to the admin portal
+  async function checkSession() {
+    showLogin();
+    try {
+      await fetch('api/auth.php?action=logout', { method: 'POST', credentials: 'same-origin' });
+    } catch (e) {}
   }
 
   function showLogin(msg, isError) {
@@ -464,16 +489,19 @@
       $loginFeedback.classList.add('hidden');
     }
     if ($loginPass) $loginPass.value = '';
-    if ($loginUser && !$loginUser.value) $loginUser.focus();
+    if ($loginUser) {
+      $loginUser.value = '';
+      setTimeout(() => $loginUser.focus(), 150);
+    }
   }
 
   function showDashboard() {
     if ($loginGate) $loginGate.classList.add('hidden');
     if ($adminApp) $adminApp.classList.remove('hidden');
-    renderAll();
+    syncAllData();
   }
 
-  // Handle login form submit
+  // Handle login form submit (Backend Bcrypt Verification)
   if ($loginForm) {
     $loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -490,28 +518,30 @@
       if ($loginBtn) $loginBtn.disabled = true;
 
       try {
-        const uHash = await computeSHA256(inputUser);
-        const pHash = await computeSHA256(inputPass);
+        const res = await fetch('api/auth.php?action=login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: inputUser, password: inputPass }),
+          credentials: 'same-origin'
+        });
 
-        await new Promise(r => setTimeout(r, 350));
+        const data = await res.json();
 
-        if (uHash === TARGET_USER_HASH && pHash === TARGET_PASS_HASH) {
-          const sessionObj = {
-            userHash: uHash,
-            timestamp: Date.now(),
-            token: 'flf_' + Math.random().toString(36).substring(2)
-          };
-          sessionStorage.setItem(SESSION_KEY, JSON.stringify(sessionObj));
+        if (res.ok && data.success) {
+          const userDisplay = document.getElementById('current-user-display');
+          if (userDisplay && data.user && data.user.username) {
+            userDisplay.textContent = 'user: ' + data.user.username;
+          }
           showDashboard();
         } else {
           if ($loginGate) {
             $loginGate.classList.add('shake-error');
             setTimeout(() => $loginGate.classList.remove('shake-error'), 500);
           }
-          showLogin('Access Denied: Invalid credentials.', true);
+          showLogin(data.error || 'Access Denied: Invalid credentials.', true);
         }
       } catch (err) {
-        showLogin('Cryptographic error: ' + err.message, true);
+        showLogin('Backend connection error: ' + err.message, true);
       } finally {
         if ($loginBtnText) $loginBtnText.classList.remove('hidden');
         if ($loginBtnSpinner) $loginBtnSpinner.classList.add('hidden');
@@ -618,7 +648,7 @@
     // Add new project form submit
     const $newProjForm = document.getElementById('new-project-form');
     if ($newProjForm) {
-      $newProjForm.addEventListener('submit', (e) => {
+      $newProjForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const service = document.getElementById('proj-service')?.value || 'Video Editor';
         const clientDefault = service === 'Promotional Video' ? 'Sponsor' : 'Client';
@@ -635,26 +665,21 @@
         const paymentStatus = isPaid ? 'Paid' : 'Unpaid';
 
         if (service === 'Promotional Video') {
-          const promos = getPromos();
-          promos.push({
-            id: 'promo_' + Date.now(),
+          await createPromoApi({
             title,
             clientName,
+            platform: 'Instagram',
             price,
             paidAmount,
             paymentStatus,
             status,
-            link: finalUrl || '',
-            createdAt: new Date().toISOString().split('T')[0]
+            link: finalUrl || ''
           });
-          savePromos(promos);
           $newProjForm.reset();
           updateProjectFormService(service);
-          renderAll();
           switchTab('panel-promos');
         } else {
-          const newVideo = {
-            id: 'vid_' + Date.now(),
+          await createProjectApi({
             title,
             clientName,
             service,
@@ -664,15 +689,10 @@
             paymentStatus,
             status,
             rawFilesUrl: rawUrl || '',
-            youtubeLink: finalUrl || '',
-            createdAt: new Date().toISOString().split('T')[0]
-          };
-          const projects = getProjects();
-          projects.push(newVideo);
-          saveProjects(projects);
+            youtubeLink: finalUrl || ''
+          });
           $newProjForm.reset();
           updateProjectFormService(service);
-          renderAll();
           switchTab('panel-projects');
         }
       });
@@ -739,7 +759,7 @@
     // Save edits from the video modal
     const $videoForm = document.getElementById('video-editor-form');
     if ($videoForm) {
-      $videoForm.addEventListener('submit', (e) => {
+      $videoForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const editId = document.getElementById('edit-video-id')?.value;
         const title = document.getElementById('input-video-title').value.trim();
@@ -755,25 +775,21 @@
         const paidAmount = isPaid ? price : 0;
         const paymentStatus = isPaid ? 'Paid' : 'Unpaid';
 
-        let projects = getProjects();
-
         if (editId) {
-          const p = projects.find(item => item.id === editId);
-          if (p) {
-            p.title = title;
-            p.clientName = client;
-            p.service = service;
-            p.status = status;
-            p.budget = price;
-            p.price = price;
-            p.paidAmount = paidAmount;
-            p.paymentStatus = paymentStatus;
-            p.youtubeLink = link;
-            p.rawFilesUrl = raw;
-          }
+          await updateProjectApi(editId, {
+            title,
+            clientName: client,
+            service,
+            status,
+            budget: price,
+            price: price,
+            paidAmount: paidAmount,
+            paymentStatus: paymentStatus,
+            youtubeLink: link,
+            rawFilesUrl: raw
+          });
         } else {
-          const newVid = {
-            id: 'vid_' + Date.now(),
+          await createProjectApi({
             title,
             clientName: client,
             service,
@@ -783,15 +799,11 @@
             paymentStatus: paymentStatus,
             status: status,
             youtubeLink: link,
-            rawFilesUrl: raw,
-            createdAt: new Date().toISOString().split('T')[0]
-          };
-          projects.push(newVid);
+            rawFilesUrl: raw
+          });
         }
 
-        saveProjects(projects);
         window.flowCloseVideoModal();
-        renderAll();
       });
     }
   }
@@ -859,48 +871,49 @@
   };
 
   // Cycle through status (Not Started -> In Progress -> Published)
-  window.flowCycleStatus = function (id) {
-    const projects = getProjects();
-    const p = projects.find(item => item.id === id);
+  window.flowCycleStatus = async function (id) {
+    const p = cachedProjects.find(item => item.id === id);
     if (!p) return;
 
+    let nextStatus = 'In Progress';
     if (!p.status || p.status === 'Not Started' || p.status === "Haven't Started") {
-      p.status = 'In Progress';
+      nextStatus = 'In Progress';
     } else if (p.status === 'In Progress') {
-      p.status = 'Published';
+      nextStatus = 'Published';
     } else {
-      p.status = 'Not Started';
+      nextStatus = 'Not Started';
     }
 
-    saveProjects(projects);
-    renderAll();
+    p.status = nextStatus;
+    renderSheetTable();
+    renderRevenueOverview();
+    await patchProjectApi(id, { status: nextStatus });
   };
 
   // Toggle between Paid and Unpaid status
-  window.flowTogglePayment = function (id) {
-    const projects = getProjects();
-    const p = projects.find(item => item.id === id);
+  window.flowTogglePayment = async function (id) {
+    const p = cachedProjects.find(item => item.id === id);
     if (!p) return;
 
     const price = p.budget || p.price || 15;
-    if (isPaidStatus(p.paymentStatus)) {
-      p.paymentStatus = 'Unpaid';
-      p.paidAmount = 0;
-    } else {
-      p.paymentStatus = 'Paid';
-      p.paidAmount = price;
-    }
-    saveProjects(projects);
-    renderAll();
+    const isPaid = isPaidStatus(p.paymentStatus);
+    const newPaymentStatus = isPaid ? 'Unpaid' : 'Paid';
+    const newPaidAmount = isPaid ? 0 : price;
+
+    p.paymentStatus = newPaymentStatus;
+    p.paidAmount = newPaidAmount;
+    renderSheetTable();
+    renderRevenueOverview();
+    await patchProjectApi(id, { paymentStatus: newPaymentStatus, paidAmount: newPaidAmount });
   };
 
   // Delete video entry after confirmation
-  window.flowDeleteProject = function (id) {
-    if (confirm('Are you sure you want to remove this video entry?')) {
-      let projects = getProjects();
-      projects = projects.filter(p => p.id !== id);
-      saveProjects(projects);
-      renderAll();
+  window.flowDeleteProject = async function (id) {
+    if (confirm('Are you sure you want to remove this video entry from MySQL?')) {
+      cachedProjects = cachedProjects.filter(p => p.id !== id);
+      renderSheetTable();
+      renderRevenueOverview();
+      await deleteProjectApi(id);
     }
   };
 
@@ -947,45 +960,34 @@
     const projects = getProjects();
     const filter = document.getElementById('project-status-filter')?.value || 'All';
 
-    const filtered = projects.filter(p => {
-      const isPaid = isPaidStatus(p.paymentStatus);
-      const status = p.status || 'Not Started';
+    let allProjectsPaid = 0;
+    let allProjectsUnpaid = 0;
+    const filtered = [];
 
-      if (filter === 'Published' && status !== 'Published') return false;
-      if (filter === 'In Progress' && status !== 'In Progress') return false;
-      if (filter === 'Not Started' && status !== 'Not Started' && status !== "Haven't Started") return false;
-      if (filter === 'Unpaid' && isPaid) return false;
-      if (filter === 'Paid' && !isPaid) return false;
+    for (let i = 0; i < projects.length; i++) {
+      const p = projects[i];
+      const price = p.budget || p.price || 0;
+      const isPaid = isPaidStatus(p.paymentStatus);
+      if (isPaid) {
+        allProjectsPaid += price;
+      } else {
+        allProjectsUnpaid += price;
+      }
+
+      const status = p.status || 'Not Started';
+      if (filter === 'Published' && status !== 'Published') continue;
+      if (filter === 'In Progress' && status !== 'In Progress') continue;
+      if (filter === 'Not Started' && status !== 'Not Started' && status !== "Haven't Started") continue;
+      if (filter === 'Unpaid' && isPaid) continue;
+      if (filter === 'Paid' && !isPaid) continue;
 
       if (projectSearchQuery) {
         const str = `${p.title} ${p.clientName} ${status} ${p.service || ''} ${p.paymentStatus || ''} ${p.youtubeLink || ''}`.toLowerCase();
-        if (!str.includes(projectSearchQuery)) return false;
+        if (!str.includes(projectSearchQuery)) continue;
       }
-      return true;
-    });
 
-    if (filtered.length === 0) {
-      $container.innerHTML = `
-        <div class="p-8 text-center text-slate-500 italic flow-card rounded-2xl">
-          No video entries match the current filter or search criteria.
-        </div>
-      `;
-      return;
+      filtered.push(p);
     }
-
-    // Calculate stats for the pinned metrics bar (Total, Paid, Unpaid)
-    let allProjectsPrice = 0;
-    let allProjectsPaid = 0;
-    let allProjectsUnpaid = 0;
-
-    projects.forEach(p => {
-      const price = p.budget || p.price || 0;
-      const isPaid = isPaidStatus(p.paymentStatus);
-      const paid = isPaid ? price : 0;
-      allProjectsPrice += price;
-      allProjectsPaid += paid;
-      allProjectsUnpaid += isPaid ? 0 : price;
-    });
 
     const $projCount = document.getElementById('project-total-count');
     const $projPaid = document.getElementById('project-paid-amount');
@@ -999,107 +1001,139 @@
     let totalTablePaid = 0;
     let totalTableUnpaid = 0;
 
-    filtered.forEach(p => {
-      const price = p.budget || p.price || 0;
-      const isPaid = isPaidStatus(p.paymentStatus);
-      const paid = isPaid ? price : 0;
-      totalTablePrice += price;
-      totalTablePaid += paid;
-      totalTableUnpaid += isPaid ? 0 : price;
-    });
+    const rowsHtml = filtered.length > 0
+      ? filtered.map((p, idx) => {
+          const isPaid = isPaidStatus(p.paymentStatus);
+          const price = p.budget || p.price || 0;
+          const paid = isPaid ? price : 0;
+          totalTablePrice += price;
+          totalTablePaid += paid;
+          totalTableUnpaid += isPaid ? 0 : price;
 
-    const rowsHtml = filtered.map((p, idx) => {
-      const isPaid = isPaidStatus(p.paymentStatus);
-      const price = p.budget || p.price || 0;
-      const paid = isPaid ? price : 0;
-      const isLinkUrl = p.youtubeLink && (p.youtubeLink.startsWith('http://') || p.youtubeLink.startsWith('https://'));
-      const rawLink = p.rawFilesUrl || p.rawLink || '';
-      const hasRaw = rawLink && (rawLink.startsWith('http://') || rawLink.startsWith('https://'));
+          const isLinkUrl = p.youtubeLink && (p.youtubeLink.startsWith('http://') || p.youtubeLink.startsWith('https://'));
+          const rawLink = p.rawFilesUrl || p.rawLink || '';
+          const hasRaw = rawLink && (rawLink.startsWith('http://') || rawLink.startsWith('https://'));
 
-      return `
-        <tr class="${!isPaid ? 'row-unpaid' : ''}">
-          <td class="font-mono text-slate-500 text-center font-semibold w-10">
-            ${idx + 1}
-          </td>
-          <td>
-            <div class="flex flex-col">
-              <span class="font-bold text-white text-sm hover:text-cyan-300 transition-colors cursor-pointer" onclick="window.flowOpenEditVideo('${p.id}')" title="Click to edit video details">
-                ${escapeHtml(p.title)}
-              </span>
-              <span class="text-[11px] text-slate-400 font-mono mt-0.5">
-                client: <span class="text-slate-300 font-medium">${escapeHtml(p.clientName || 'Client')}</span>
-              </span>
-            </div>
-          </td>
-          <td>
-            ${getStatusBadge(p.status, p.id, false)}
-          </td>
-          <td>
-            <button 
-              type="button" 
-              onclick="window.flowTogglePayment('${p.id}')" 
-              class="px-2.5 py-1 rounded-lg text-xs font-mono font-bold border transition-all inline-flex items-center gap-1.5 cursor-pointer ${
-                isPaid 
-                  ? 'bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 border-emerald-500/40' 
-                  : 'bg-amber-950/90 hover:bg-amber-900 text-amber-300 border-amber-500/50 shadow-sm shadow-amber-500/10'
-              }"
-              title="Click to toggle Paid / Unpaid"
-            >
-              <i class="fa-solid ${isPaid ? 'fa-circle-check text-emerald-400' : 'fa-hourglass-half text-amber-400'}"></i>
-              <span>${isPaid ? 'Paid' : 'Unpaid'}</span>
-            </button>
-          </td>
-          <td class="font-mono text-slate-200 font-semibold text-right">
-            $${price.toFixed(2)}
-          </td>
-          <td class="font-mono font-bold text-right pr-6 ${isPaid ? 'text-emerald-400' : 'text-slate-500'}">
-            $${paid.toFixed(2)}
-          </td>
-          <td class="text-center px-4">
-            ${hasRaw ? `
-              <a href="${escapeHtml(rawLink)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-cyan-950/50 hover:bg-cyan-900 text-cyan-300 hover:text-white border border-cyan-500/30 text-xs font-mono transition-colors group" title="Open raw footage in Google Drive / Dropbox">
-                <i class="fa-solid fa-folder-open text-cyan-400 group-hover:scale-110 transition-transform"></i>
-                <span>Raw</span>
-                <i class="fa-solid fa-arrow-up-right-from-square text-[10px] opacity-70"></i>
-              </a>
-            ` : `<span class="text-slate-600 text-xs font-mono italic">—</span>`}
-          </td>
-          <td class="text-center px-4">
-            ${isLinkUrl ? `
-              <a href="${escapeHtml(p.youtubeLink)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-rose-950/50 hover:bg-rose-900 text-rose-300 hover:text-white border border-rose-500/30 text-xs font-mono transition-colors group" title="Watch YouTube video">
-                <i class="fa-brands fa-youtube text-rose-400 group-hover:scale-110 transition-transform"></i>
-                <span>Short</span>
-                <i class="fa-solid fa-arrow-up-right-from-square text-[10px] opacity-70"></i>
-              </a>
-            ` : (p.youtubeLink ? `
-              <a href="https://youtube.com/shorts" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-rose-950/50 hover:bg-rose-900 text-rose-300 hover:text-white border border-rose-500/30 text-xs font-mono transition-colors">
-                <i class="fa-brands fa-youtube text-rose-400"></i>
-                <span>${escapeHtml(p.youtubeLink)}</span>
-                <i class="fa-solid fa-arrow-up-right-from-square text-[10px] opacity-70"></i>
-              </a>
-            ` : `<span class="text-slate-600 text-xs font-mono italic">—</span>`)}
-          </td>
-          <td>
-            <div class="flex items-center gap-1.5 justify-end">
-              <button 
-                onclick="window.flowOpenEditVideo('${p.id}')" 
-                class="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-cyan-400 text-xs transition-colors cursor-pointer"
-                title="Edit video"
-              >
-                <i class="fa-solid fa-pen-to-square"></i>
-              </button>
-              <button 
-                onclick="window.flowDeleteProject('${p.id}')" 
-                class="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-950/30 transition-colors cursor-pointer"
-                title="Delete video"
-              >
-                <i class="fa-solid fa-trash"></i>
-              </button>
-            </div>
-          </td>
-        </tr>
-      `;
-    }).join('');
+          return `
+            <tr class="${!isPaid ? 'row-unpaid' : ''}">
+              <td class="font-mono text-slate-500 text-center font-semibold w-10">
+                ${idx + 1}
+              </td>
+              <td>
+                <div class="flex flex-col">
+                  <span class="font-bold text-white text-sm hover:text-cyan-300 transition-colors cursor-pointer" onclick="window.flowOpenEditVideo('${p.id}')" title="Click to edit video details">
+                    ${escapeHtml(p.title)}
+                  </span>
+                  <span class="text-[11px] text-slate-400 font-mono mt-0.5">
+                    client: <span class="text-slate-300 font-medium">${escapeHtml(p.clientName || 'Client')}</span>
+                  </span>
+                </div>
+              </td>
+              <td>
+                ${getStatusBadge(p.status, p.id, false)}
+              </td>
+              <td>
+                <button 
+                  type="button" 
+                  onclick="window.flowTogglePayment('${p.id}')" 
+                  class="px-2.5 py-1 rounded-lg text-xs font-mono font-bold border transition-all inline-flex items-center gap-1.5 cursor-pointer ${
+                    isPaid 
+                      ? 'bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 border-emerald-500/40' 
+                      : 'bg-amber-950/90 hover:bg-amber-900 text-amber-300 border-amber-500/50 shadow-sm shadow-amber-500/10'
+                  }"
+                  title="Click to toggle Paid / Unpaid"
+                >
+                  <i class="fa-solid ${isPaid ? 'fa-circle-check text-emerald-400' : 'fa-hourglass-half text-amber-400'}"></i>
+                  <span>${isPaid ? 'Paid' : 'Unpaid'}</span>
+                </button>
+              </td>
+              <td class="font-mono text-slate-200 font-semibold text-right">
+                $${price.toFixed(2)}
+              </td>
+              <td class="font-mono font-bold text-right pr-6 ${isPaid ? 'text-emerald-400' : 'text-slate-500'}">
+                $${paid.toFixed(2)}
+              </td>
+              <td class="text-center px-4">
+                ${hasRaw ? `
+                  <a href="${escapeHtml(rawLink)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-cyan-950/50 hover:bg-cyan-900 text-cyan-300 hover:text-white border border-cyan-500/30 text-xs font-mono transition-colors group" title="Open raw footage in Google Drive / Dropbox">
+                    <i class="fa-solid fa-folder-open text-cyan-400 group-hover:scale-110 transition-transform"></i>
+                    <span>Raw</span>
+                    <i class="fa-solid fa-arrow-up-right-from-square text-[10px] opacity-70"></i>
+                  </a>
+                ` : `<span class="text-slate-600 text-xs font-mono italic">—</span>`}
+              </td>
+              <td class="text-center px-4">
+                ${isLinkUrl ? `
+                  <a href="${escapeHtml(p.youtubeLink)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-rose-950/50 hover:bg-rose-900 text-rose-300 hover:text-white border border-rose-500/30 text-xs font-mono transition-colors group" title="Watch YouTube video">
+                    <i class="fa-brands fa-youtube text-rose-400 group-hover:scale-110 transition-transform"></i>
+                    <span>Short</span>
+                    <i class="fa-solid fa-arrow-up-right-from-square text-[10px] opacity-70"></i>
+                  </a>
+                ` : (p.youtubeLink ? `
+                  <a href="https://youtube.com/shorts" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-rose-950/50 hover:bg-rose-900 text-rose-300 hover:text-white border border-rose-500/30 text-xs font-mono transition-colors">
+                    <i class="fa-brands fa-youtube text-rose-400"></i>
+                    <span>${escapeHtml(p.youtubeLink)}</span>
+                    <i class="fa-solid fa-arrow-up-right-from-square text-[10px] opacity-70"></i>
+                  </a>
+                ` : `<span class="text-slate-600 text-xs font-mono italic">—</span>`)}
+              </td>
+              <td>
+                <div class="flex items-center gap-1.5 justify-end">
+                  <button 
+                    onclick="window.flowOpenEditVideo('${p.id}')" 
+                    class="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-cyan-400 text-xs transition-colors cursor-pointer"
+                    title="Edit video"
+                  >
+                    <i class="fa-solid fa-pen-to-square"></i>
+                  </button>
+                  <button 
+                    onclick="window.flowDeleteProject('${p.id}')" 
+                    class="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-950/30 transition-colors cursor-pointer"
+                    title="Delete video"
+                  >
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('')
+      : `<tr><td colspan="9" class="p-8 text-center text-slate-500 italic">No video entries match the current filter or search criteria.</td></tr>`;
+
+    const fullBodyHtml = rowsHtml + `<tr class="sheet-table-spacer"><td colspan="9"></td></tr>`;
+
+    const footHtml = `
+      <tr>
+        <td colspan="4" class="text-slate-300">
+          <div class="flex items-center gap-3">
+            <span class="text-cyan-400 font-bold">${filtered.length} Videos Tracked</span>
+            <span class="text-slate-600">&bull;</span>
+            <span class="text-xs text-slate-400 font-normal">Matching Filter</span>
+          </div>
+        </td>
+        <td class="text-right text-white font-mono font-black">
+          $${totalTablePrice.toFixed(2)}
+        </td>
+        <td class="text-right text-emerald-400 font-mono font-black pr-6">
+          $${totalTablePaid.toFixed(2)}
+        </td>
+        <td colspan="3" class="text-right">
+          <span class="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-amber-950/90 border border-amber-500/50 text-amber-300 font-mono text-xs font-bold">
+            <i class="fa-solid fa-hourglass-half"></i>
+            <span>Total Unpaid: $${totalTableUnpaid.toFixed(2)}</span>
+          </span>
+        </td>
+      </tr>
+    `;
+
+    const $existingTbody = $container.querySelector('#sheet-table-tbody');
+    const $existingTfoot = $container.querySelector('#sheet-table-tfoot');
+
+    if ($existingTbody && $existingTfoot) {
+      $existingTbody.innerHTML = fullBodyHtml;
+      $existingTfoot.innerHTML = footHtml;
+      return;
+    }
 
     $container.innerHTML = `
       <div class="sheet-table-wrapper flow-scrollbar flex-1 min-h-0 overflow-auto">
@@ -1117,31 +1151,11 @@
               <th class="text-right">Quick Actions</th>
             </tr>
           </thead>
-          <tbody>
-            ${rowsHtml}
+          <tbody id="sheet-table-tbody">
+            ${fullBodyHtml}
           </tbody>
-          <tfoot>
-            <tr>
-              <td colspan="4" class="text-slate-300">
-                <div class="flex items-center gap-3">
-                  <span class="text-cyan-400 font-bold">${filtered.length} Videos Tracked</span>
-                  <span class="text-slate-600">&bull;</span>
-                  <span class="text-xs text-slate-400 font-normal">Matching Filter</span>
-                </div>
-              </td>
-              <td class="text-right text-white font-mono font-black">
-                $${totalTablePrice.toFixed(2)}
-              </td>
-              <td class="text-right text-emerald-400 font-mono font-black pr-6">
-                $${totalTablePaid.toFixed(2)}
-              </td>
-              <td colspan="3" class="text-right">
-                <span class="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-amber-950/90 border border-amber-500/50 text-amber-300 font-mono text-xs font-bold">
-                  <i class="fa-solid fa-hourglass-half"></i>
-                  <span>Total Unpaid: $${totalTableUnpaid.toFixed(2)}</span>
-                </span>
-              </td>
-            </tr>
+          <tfoot id="sheet-table-tfoot">
+            ${footHtml}
           </tfoot>
         </table>
       </div>
@@ -1203,7 +1217,7 @@
     // Save edits from the promo modal
     const $promoForm = document.getElementById('promo-editor-form');
     if ($promoForm) {
-      $promoForm.addEventListener('submit', (e) => {
+      $promoForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const editId = document.getElementById('edit-promo-id')?.value;
         const client = document.getElementById('input-promo-client').value.trim();
@@ -1217,37 +1231,29 @@
         const paidAmount = isPaid ? price : 0;
         const paymentStatus = isPaid ? 'Paid' : 'Unpaid';
 
-        let promos = getPromos();
-
         if (editId) {
-          const pr = promos.find(item => item.id === editId);
-          if (pr) {
-            pr.clientName = client;
-            pr.title = title;
-            pr.price = price;
-            pr.status = status;
-            pr.paidAmount = paidAmount;
-            pr.paymentStatus = paymentStatus;
-            pr.link = link;
-          }
+          await updatePromoApi(editId, {
+            clientName: client,
+            title,
+            price,
+            status,
+            paidAmount,
+            paymentStatus,
+            link
+          });
         } else {
-          const newPromo = {
-            id: 'promo_' + Date.now(),
+          await createPromoApi({
             title,
             clientName: client,
             price,
             paidAmount,
             paymentStatus,
             status,
-            link,
-            createdAt: new Date().toISOString().split('T')[0]
-          };
-          promos.push(newPromo);
+            link
+          });
         }
 
-        savePromos(promos);
         window.flowClosePromoModal();
-        renderAll();
       });
     }
   }
@@ -1309,62 +1315,62 @@
   };
 
   // Quick prompt popup to paste the live sponsored video URL
-  window.flowPromptPromoLink = function (id) {
-    const promos = getPromos();
-    const pr = promos.find(item => item.id === id);
+  window.flowPromptPromoLink = async function (id) {
+    const pr = cachedPromos.find(item => item.id === id);
     if (!pr) return;
     const currentLink = pr.link || '';
     const newLink = prompt('Enter sponsored post URL once posted:', currentLink);
     if (newLink !== null) {
       pr.link = newLink.trim();
-      savePromos(promos);
-      renderAll();
+      renderPromosTable();
+      await patchPromoApi(id, { link: newLink.trim() });
     }
   };
 
   // Cycle promo status (Not Started -> In Progress -> Published)
-  window.flowCyclePromoStatus = function (id) {
-    const promos = getPromos();
-    const pr = promos.find(item => item.id === id);
+  window.flowCyclePromoStatus = async function (id) {
+    const pr = cachedPromos.find(item => item.id === id);
     if (!pr) return;
 
+    let nextStatus = 'In Progress';
     if (!pr.status || pr.status === 'Not Started' || pr.status === "Haven't Started") {
-      pr.status = 'In Progress';
+      nextStatus = 'In Progress';
     } else if (pr.status === 'In Progress') {
-      pr.status = 'Published';
+      nextStatus = 'Published';
     } else {
-      pr.status = 'Not Started';
+      nextStatus = 'Not Started';
     }
 
-    savePromos(promos);
-    renderAll();
+    pr.status = nextStatus;
+    renderPromosTable();
+    renderRevenueOverview();
+    await patchPromoApi(id, { status: nextStatus });
   };
 
   // Toggle between Paid and Unpaid for promo deals
-  window.flowTogglePromoPayment = function (id) {
-    const promos = getPromos();
-    const pr = promos.find(item => item.id === id);
+  window.flowTogglePromoPayment = async function (id) {
+    const pr = cachedPromos.find(item => item.id === id);
     if (!pr) return;
 
     const price = pr.price || 25;
-    if (isPaidStatus(pr.paymentStatus)) {
-      pr.paymentStatus = 'Unpaid';
-      pr.paidAmount = 0;
-    } else {
-      pr.paymentStatus = 'Paid';
-      pr.paidAmount = price;
-    }
-    savePromos(promos);
-    renderAll();
+    const isPaid = isPaidStatus(pr.paymentStatus);
+    const newPaymentStatus = isPaid ? 'Unpaid' : 'Paid';
+    const newPaidAmount = isPaid ? 0 : price;
+
+    pr.paymentStatus = newPaymentStatus;
+    pr.paidAmount = newPaidAmount;
+    renderPromosTable();
+    renderRevenueOverview();
+    await patchPromoApi(id, { paymentStatus: newPaymentStatus, paidAmount: newPaidAmount });
   };
 
   // Delete promo entry after confirmation
-  window.flowDeletePromo = function (id) {
-    if (confirm('Are you sure you want to remove this promotional deal?')) {
-      let promos = getPromos();
-      promos = promos.filter(pr => pr.id !== id);
-      savePromos(promos);
-      renderAll();
+  window.flowDeletePromo = async function (id) {
+    if (confirm('Are you sure you want to remove this promotional deal from MySQL?')) {
+      cachedPromos = cachedPromos.filter(pr => pr.id !== id);
+      renderPromosTable();
+      renderRevenueOverview();
+      await deletePromoApi(id);
     }
   };
 
@@ -1376,12 +1382,14 @@
     const promos = getPromos();
     const filter = document.getElementById('promo-status-filter')?.value || 'All';
 
-    // Calculate promo metrics (Total deals, Paid, Unpaid)
+    // Single-pass calculation for metrics and filtering
     let activePromosCount = 0;
     let promoTotalPaid = 0;
     let promoTotalUnpaid = 0;
+    const filtered = [];
 
-    promos.forEach(pr => {
+    for (let i = 0; i < promos.length; i++) {
+      const pr = promos[i];
       const price = pr.price || 0;
       const isPaid = isPaidStatus(pr.paymentStatus);
       const paid = isPaid ? price : 0;
@@ -1390,7 +1398,21 @@
       }
       promoTotalPaid += paid;
       promoTotalUnpaid += isPaid ? 0 : price;
-    });
+
+      const status = pr.status || 'Not Started';
+      if (filter === 'Published' && status !== 'Published') continue;
+      if (filter === 'In Progress' && status !== 'In Progress') continue;
+      if (filter === 'Not Started' && status !== 'Not Started' && status !== "Haven't Started") continue;
+      if (filter === 'Unpaid' && isPaid) continue;
+      if (filter === 'Paid' && !isPaid) continue;
+
+      if (promoSearchQuery) {
+        const str = `${pr.title} ${pr.clientName} ${status} ${pr.paymentStatus || ''}`.toLowerCase();
+        if (!str.includes(promoSearchQuery)) continue;
+      }
+
+      filtered.push(pr);
+    }
 
     const $activeCount = document.getElementById('promo-active-count');
     const $paidAmount = document.getElementById('promo-paid-amount');
@@ -1399,24 +1421,6 @@
     if ($activeCount) $activeCount.textContent = `${promos.length} Deals`;
     if ($paidAmount) $paidAmount.textContent = `$${promoTotalPaid.toFixed(2)}`;
     if ($unpaidAmount) $unpaidAmount.textContent = `$${promoTotalUnpaid.toFixed(2)}`;
-
-    // Filter promos based on active dropdown and search query
-    const filtered = promos.filter(pr => {
-      const isPaid = isPaidStatus(pr.paymentStatus);
-      const status = pr.status || 'Not Started';
-
-      if (filter === 'Published' && status !== 'Published') return false;
-      if (filter === 'In Progress' && status !== 'In Progress') return false;
-      if (filter === 'Not Started' && status !== 'Not Started' && status !== "Haven't Started") return false;
-      if (filter === 'Unpaid' && isPaid) return false;
-      if (filter === 'Paid' && !isPaid) return false;
-
-      if (promoSearchQuery) {
-        const str = `${pr.title} ${pr.clientName} ${status} ${pr.paymentStatus || ''}`.toLowerCase();
-        if (!str.includes(promoSearchQuery)) return false;
-      }
-      return true;
-    });
 
     // Show message if no promo deals are logged yet
     if (promos.length === 0) {
@@ -1427,16 +1431,10 @@
           </div>
           <h3 class="text-lg font-heading font-bold text-white">No Promotional Deals Logged Yet</h3>
           <div class="pt-2">
+            <button onclick="window.flowOpenAddPromo()" class="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs transition-colors cursor-pointer">
+              <i class="fa-solid fa-plus mr-1.5"></i> Add First Deal
+            </button>
           </div>
-        </div>
-      `;
-      return;
-    }
-
-    if (filtered.length === 0) {
-      $container.innerHTML = `
-        <div class="p-8 text-center text-slate-500 italic flow-card rounded-2xl">
-          No promotional deals match the current filter or search criteria.
         </div>
       `;
       return;
@@ -1446,22 +1444,17 @@
     let tablePaid = 0;
     let tableUnpaid = 0;
 
-    filtered.forEach(pr => {
-      const price = pr.price || 0;
-      const isPaid = isPaidStatus(pr.paymentStatus);
-      const paid = isPaid ? price : 0;
-      tablePrice += price;
-      tablePaid += paid;
-      tableUnpaid += isPaid ? 0 : price;
-    });
+    const rowsHtml = filtered.length > 0
+      ? filtered.map((pr, idx) => {
+          const isPaid = isPaidStatus(pr.paymentStatus);
+          const price = pr.price || 0;
+          const paid = isPaid ? price : 0;
+          tablePrice += price;
+          tablePaid += paid;
+          tableUnpaid += isPaid ? 0 : price;
+          const isLinkUrl = pr.link && (pr.link.startsWith('http://') || pr.link.startsWith('https://'));
 
-    const rowsHtml = filtered.map((pr, idx) => {
-      const isPaid = isPaidStatus(pr.paymentStatus);
-      const price = pr.price || 0;
-      const paid = isPaid ? price : 0;
-      const isLinkUrl = pr.link && (pr.link.startsWith('http://') || pr.link.startsWith('https://'));
-
-      return `
+          return `
         <tr class="${!isPaid ? 'row-unpaid' : ''}">
           <td class="font-mono text-slate-500 text-center font-semibold w-10">
             ${idx + 1}
@@ -1545,7 +1538,43 @@
           </td>
         </tr>
       `;
-    }).join('');
+        }).join('')
+      : `<tr><td colspan="8" class="p-8 text-center text-slate-500 italic">No promotional deals match the current filter or search criteria.</td></tr>`;
+
+    const fullBodyHtml = rowsHtml + `<tr class="sheet-table-spacer"><td colspan="8"></td></tr>`;
+
+    const footHtml = `
+      <tr>
+        <td colspan="4" class="text-slate-300">
+          <div class="flex items-center gap-3">
+            <span class="text-purple-400 font-bold">${filtered.length} Deals Tracked</span>
+            <span class="text-slate-600">&bull;</span>
+            <span class="text-xs text-slate-400 font-normal">Matching Filter</span>
+          </div>
+        </td>
+        <td class="text-right text-white font-mono font-black">
+          $${tablePrice.toFixed(2)}
+        </td>
+        <td class="text-right text-emerald-400 font-mono font-black pr-6">
+          $${tablePaid.toFixed(2)}
+        </td>
+        <td colspan="2" class="text-right">
+          <span class="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-amber-950/90 border border-amber-500/50 text-amber-300 font-mono text-xs font-bold">
+            <i class="fa-solid fa-hourglass-half"></i>
+            <span>Total Unpaid: $${tableUnpaid.toFixed(2)}</span>
+          </span>
+        </td>
+      </tr>
+    `;
+
+    const $existingTbody = $container.querySelector('#promos-table-tbody');
+    const $existingTfoot = $container.querySelector('#promos-table-tfoot');
+
+    if ($existingTbody && $existingTfoot) {
+      $existingTbody.innerHTML = fullBodyHtml;
+      $existingTfoot.innerHTML = footHtml;
+      return;
+    }
 
     $container.innerHTML = `
       <div class="sheet-table-wrapper flow-scrollbar flex-1 min-h-0 overflow-auto">
@@ -1562,31 +1591,11 @@
               <th class="text-right">Quick Actions</th>
             </tr>
           </thead>
-          <tbody>
-            ${rowsHtml}
+          <tbody id="promos-table-tbody">
+            ${fullBodyHtml}
           </tbody>
-          <tfoot>
-            <tr>
-              <td colspan="4" class="text-slate-300">
-                <div class="flex items-center gap-3">
-                  <span class="text-purple-400 font-bold">${filtered.length} Deals Tracked</span>
-                  <span class="text-slate-600">&bull;</span>
-                  <span class="text-xs text-slate-400 font-normal">Matching Filter</span>
-                </div>
-              </td>
-              <td class="text-right text-white font-mono font-black">
-                $${tablePrice.toFixed(2)}
-              </td>
-              <td class="text-right text-emerald-400 font-mono font-black pr-6">
-                $${tablePaid.toFixed(2)}
-              </td>
-              <td colspan="2" class="text-right">
-                <span class="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-amber-950/90 border border-amber-500/50 text-amber-300 font-mono text-xs font-bold">
-                  <i class="fa-solid fa-hourglass-half"></i>
-                  <span>Total Unpaid: $${tableUnpaid.toFixed(2)}</span>
-                </span>
-              </td>
-            </tr>
+          <tfoot id="promos-table-tfoot">
+            ${footHtml}
           </tfoot>
         </table>
       </div>
