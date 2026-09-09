@@ -1,0 +1,535 @@
+/* Styling for the Freelance Flow admin dashboard */
+
+:root {
+  --flow-bg: #07090e;
+  --flow-panel: #0d121d;
+  --flow-panel-border: rgba(14, 165, 233, 0.18);
+  --flow-panel-hover: rgba(14, 165, 233, 0.32);
+  --flow-cyan: #00f2fe;
+  --flow-blue: #38bdf8;
+  --flow-indigo: #6366f1;
+  --flow-emerald: #10b981;
+  --flow-amber: #f59e0b;
+  --flow-rose: #f43f5e;
+  --flow-purple: #a855f7;
+}
+
+/* Subtle background grid pattern */
+.cyber-grid-bg {
+  background-color: var(--flow-bg);
+  background-image: 
+    linear-gradient(rgba(14, 165, 233, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(14, 165, 233, 0.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+  background-position: center center;
+}
+
+/* Dark card styling (optimized high performance without backdrop-filter) */
+.flow-card {
+  background: #0d121d;
+  border: 1px solid var(--flow-panel-border);
+  box-shadow: 0 8px 24px -6px rgba(0, 0, 0, 0.6);
+  transition: border-color 0.15s ease;
+}
+
+.flow-card:hover {
+  border-color: var(--flow-panel-hover);
+}
+
+/* Glowing background light orbs (optimized GPU radial gradients without expensive filter:blur) */
+.glow-orb-cyan {
+  position: fixed;
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 242, 254, 0.08) 0%, rgba(56, 189, 248, 0.02) 45%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+  contain: strict;
+  transform: translate3d(0, 0, 0);
+}
+
+.glow-orb-purple {
+  position: fixed;
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(168, 85, 247, 0.07) 0%, rgba(244, 63, 94, 0.015) 45%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+  contain: strict;
+  transform: translate3d(0, 0, 0);
+}
+
+/* Custom scrollbars */
+.flow-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.flow-scrollbar::-webkit-scrollbar-track {
+  background: rgba(13, 18, 29, 0.6);
+}
+.flow-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(14, 165, 233, 0.3);
+  border-radius: 3px;
+}
+.flow-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(14, 165, 233, 0.6);
+}
+
+/* Pulsing status indicator dot */
+.pulse-green {
+  position: relative;
+  transform: translate3d(0, 0, 0);
+}
+
+.pulse-green::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 9999px;
+  background: #10b981;
+  animation: pulse-green-gpu 2s cubic-bezier(0.24, 0, 0.38, 1) infinite;
+  pointer-events: none;
+  z-index: -1;
+}
+
+@keyframes pulse-green-gpu {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  70% {
+    transform: scale(2.8);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(2.8);
+    opacity: 0;
+  }
+}
+
+/* Shake animation when login fails */
+@keyframes shake-admin {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-8px); }
+  40%, 80% { transform: translateX(8px); }
+}
+.shake-error {
+  animation: shake-admin 0.45s ease-in-out;
+}
+
+/* Button styles */
+.btn-flow-primary {
+  background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
+  color: white;
+  transition: all 0.25s ease;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+}
+.btn-flow-primary:hover {
+  box-shadow: 0 0 20px rgba(14, 165, 233, 0.4);
+  border-color: rgba(56, 189, 248, 0.8);
+  transform: translateY(-1px);
+}
+
+.btn-flow-emerald {
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+  color: white;
+  transition: all 0.25s ease;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+.btn-flow-emerald:hover {
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+  transform: translateY(-1px);
+}
+
+.btn-flow-amber {
+  background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
+  color: white;
+  transition: all 0.25s ease;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+.btn-flow-amber:hover {
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
+  transform: translateY(-1px);
+}
+
+.btn-flow-danger {
+  background: linear-gradient(135deg, #be123c 0%, #f43f5e 100%);
+  color: white;
+  transition: all 0.25s ease;
+  border: 1px solid rgba(244, 63, 94, 0.4);
+}
+.btn-flow-danger:hover {
+  box-shadow: 0 0 20px rgba(244, 63, 94, 0.4);
+  transform: translateY(-1px);
+}
+
+/* Active sidebar tab highlight */
+.nav-tab-btn.active {
+  background: rgba(14, 165, 233, 0.14);
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.5);
+}
+.nav-tab-btn.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: #38bdf8;
+  border-radius: 0 2px 2px 0;
+}
+
+/* Step progress indicator */
+.pipeline-step {
+  position: relative;
+  transition: all 0.2s ease;
+}
+.pipeline-step.completed {
+  color: #10b981;
+}
+.pipeline-step.active {
+  color: #38bdf8;
+  font-weight: bold;
+}
+.pipeline-step.pending {
+  color: #64748b;
+}
+
+/* Lock badge for unpaid files */
+.paywall-locked-overlay {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.98) 100%);
+  border: 1px dashed rgba(244, 63, 94, 0.4);
+}
+
+.paywall-unlocked-overlay {
+  background: linear-gradient(135deg, rgba(6, 78, 59, 0.2) 0%, rgba(15, 23, 42, 0.9) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+/* Task checklist items */
+.checklist-item {
+  transition: all 0.2s ease;
+}
+.checklist-item:hover {
+  background: rgba(30, 41, 59, 0.5);
+}
+.checklist-item.completed span.task-text {
+  text-decoration: line-through;
+  color: #64748b;
+}
+
+/* Category tags */
+.badge-category-progress {
+  background: rgba(14, 165, 233, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+}
+.badge-category-discord {
+  background: rgba(99, 102, 241, 0.15);
+  color: #a5b4fc;
+  border: 1px solid rgba(99, 102, 241, 0.35);
+}
+.badge-category-feedback {
+  background: rgba(168, 85, 247, 0.15);
+  color: #d8b4fe;
+  border: 1px solid rgba(168, 85, 247, 0.35);
+}
+.badge-category-todo {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fcd34d;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+.badge-category-payment {
+  background: rgba(16, 185, 129, 0.15);
+  color: #6ee7b7;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+/* Project status badges */
+.deliverable-card {
+  background: linear-gradient(135deg, rgba(13, 18, 29, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+}
+
+/* Video and promo table styling */
+.sheet-table-wrapper {
+  width: 100%;
+  flex: 1 1 0%;
+  min-height: 0;
+  overflow-x: auto;
+  overflow-y: auto;
+  border-radius: 1rem;
+  border: 1px solid var(--flow-panel-border);
+  background: rgba(13, 18, 29, 0.9);
+  position: relative;
+}
+
+.sheet-table {
+  width: 100%;
+  height: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  min-width: 780px;
+}
+
+.sheet-table th {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: #090d16;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(56, 189, 248, 0.25);
+  white-space: nowrap;
+}
+
+.sheet-table td {
+  padding: 11px 14px;
+  font-size: 12px;
+  border-bottom: 1px solid rgba(30, 41, 59, 0.6);
+  vertical-align: middle;
+}
+
+.sheet-table tbody tr:not(.sheet-table-spacer) {
+  height: 1px;
+  transition: background 0.15s ease;
+}
+
+.sheet-table tbody tr:not(.sheet-table-spacer):hover {
+  background: rgba(14, 165, 233, 0.07);
+}
+
+.sheet-table tbody tr.row-unpaid {
+  background: rgba(245, 158, 11, 0.03);
+}
+
+.sheet-table tbody tr.row-unpaid:hover {
+  background: rgba(245, 158, 11, 0.09);
+}
+
+/* Invisible spacer row absorbs empty vertical space so footer is always fixed at the bottom */
+.sheet-table-spacer,
+.sheet-table-spacer:hover,
+.sheet-table-spacer td {
+  height: 100% !important;
+  border: none !important;
+  padding: 0 !important;
+  background: transparent !important;
+  pointer-events: none;
+}
+
+.sheet-table tfoot td {
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+  background: #090d16;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: bold;
+  padding: 14px;
+  border-top: 2px solid rgba(56, 189, 248, 0.35);
+}
+
+/* Dropdown select styling (removes default white highlight box) */
+select,
+.custom-select {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2300f2fe' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 8l4 4 4-4'/%3e%3c/svg%3e") !important;
+  background-position: right 0.75rem center !important;
+  background-repeat: no-repeat !important;
+  background-size: 1.15rem 1.15rem !important;
+  padding-right: 2.25rem !important;
+  cursor: pointer;
+}
+
+select::-ms-expand {
+  display: none !important;
+}
+
+select:focus {
+  outline: none !important;
+  border-color: #00f2fe !important;
+  box-shadow: 0 0 0 1px #00f2fe, 0 0 16px rgba(0, 242, 254, 0.25) !important;
+}
+
+select option {
+  background-color: #0d121d;
+  color: #f1f5f9;
+  padding: 8px 12px;
+}
+
+/* Gray out placeholder option in dropdown lists */
+select option:disabled,
+select option[disabled],
+select option[value=""] {
+  color: #64748b !important;
+  background-color: #0d121d;
+}
+
+/* Dim select dropdown when placeholder option is active */
+select:has(option:disabled:checked),
+select:has(option[value=""]:checked),
+select[data-placeholder="true"],
+select:required:invalid {
+  color: #64748b !important;
+}
+
+/* Form inputs and login screen styling */
+
+/* Make sure inputs allow normal text selection */
+input, textarea, select {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+}
+
+/* Clean text and password inputs */
+input[type="text"],
+input[type="password"],
+input[type="number"],
+input[type="search"],
+textarea {
+  text-rendering: optimizeSpeed;
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Admin login overlay card */
+#login-gate {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background-color: #07090e !important;
+  contain: paint layout;
+  transform: translate3d(0, 0, 0);
+}
+
+#login-gate .flow-card {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background-color: #0d121d !important;
+  contain: paint layout;
+  transform: translate3d(0, 0, 0);
+}
+
+/* Smooth form inputs */
+#login-gate input,
+#security-modal-dialog input,
+#video-modal-dialog input,
+#promo-modal-dialog input {
+  background-color: #080d19 !important;
+  color: #ffffff !important;
+  text-rendering: optimizeSpeed !important;
+  font-synthesis: none !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+#login-gate input:focus,
+#security-modal-dialog input:focus,
+#video-modal-dialog input:focus,
+#promo-modal-dialog input:focus {
+  outline: none !important;
+  border-color: #00f2fe !important;
+  box-shadow: 0 0 0 1px #00f2fe, 0 0 12px rgba(0, 242, 254, 0.2) !important;
+}
+
+/* Admin layout (fixed sidebar on the left, scrolling tables on the right) */
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
+#admin-app {
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100vh;
+  max-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+#admin-app > header {
+  flex-shrink: 0;
+}
+
+#admin-app > .admin-workspace,
+#admin-app > div.flex-1 {
+  flex: 1 1 0%;
+  display: flex;
+  min-height: 0;
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+aside.admin-sidebar,
+#admin-app aside {
+  flex-shrink: 0;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+}
+
+main.admin-main,
+#admin-app main {
+  flex: 1 1 0%;
+  min-height: 0;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Tab panels (Videos, Promos, Cash Flow, Add Project) */
+.flow-tab-panel {
+  flex: 1 1 0%;
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.flow-tab-panel.hidden {
+  display: none !important;
+}
+
+/* Scrollable table boxes for videos and promos */
+#sheet-table-container,
+#promos-table-container {
+  flex: 1 1 0%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Height fallback for very small laptop screens */
+@media (max-height: 640px) {
+  main.admin-main,
+  #admin-app main {
+    overflow-y: auto !important;
+  }
+  .flow-tab-panel {
+    height: auto !important;
+    overflow: visible !important;
+  }
+  .sheet-table-wrapper {
+    max-height: 380px !important;
+  }
+}
+
+
