@@ -43,7 +43,7 @@ try {
 
         try {
             $reqPath = [System.Uri]::UnescapeDataString($request.Url.AbsolutePath)
-            if ($reqPath -eq "" -or $reqPath -eq "/") {
+            if ($reqPath -eq "" -or $reqPath -eq "/" -or $reqPath -eq "/home" -or $reqPath -eq "/home.php") {
                 if (Test-Path (Join-Path $root "index.php") -PathType Leaf) {
                     $reqPath = "/index.php"
                 } else {
