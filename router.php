@@ -1,8 +1,8 @@
 <?php
 /**
- * Built-in PHP Server Router
+ * Built-in Server Router
  * Blocks direct public HTTP downloads of sensitive files (.sql, .bat, .ps1, etc.)
- * Routes root, home, and extension-less URLs to their respective PHP files.
+ * Routes root, home, and extension-less URLs to their respective HTML files.
  */
 
 $uri = urldecode(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
@@ -16,17 +16,20 @@ if (in_array($ext, $blockedExtensions)) {
     exit('403 Forbidden: Access to this file is restricted.');
 }
 
-// Route root and /home to index.php
-if ($uri === '/' || $uri === '' || $uri === '/home' || $uri === '/home.php') {
-    require __DIR__ . '/index.php';
-    exit;
+// Route root and /home to index.html
+if ($uri === '/' || $uri === '' || $uri === '/home' || $uri === '/home.html') {
+    if (file_exists(__DIR__ . '/index.html')) {
+        readfile(__DIR__ . '/index.html');
+        exit;
+    }
 }
 
-// Clean URL support: if /about, /services, /contact is requested without extension, route to .php
+// Clean URL support: if /about, /services, /contact is requested without extension, serve .html
 if (empty($ext)) {
-    $phpFile = __DIR__ . $uri . '.php';
-    if (file_exists($phpFile)) {
-        require $phpFile;
+    $htmlFile = __DIR__ . $uri . '.html';
+    if (file_exists($htmlFile)) {
+        header('Content-Type: text/html; charset=utf-8');
+        readfile($htmlFile);
         exit;
     }
 }

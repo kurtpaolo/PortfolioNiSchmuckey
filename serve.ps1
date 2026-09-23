@@ -43,12 +43,8 @@ try {
 
         try {
             $reqPath = [System.Uri]::UnescapeDataString($request.Url.AbsolutePath)
-            if ($reqPath -eq "" -or $reqPath -eq "/" -or $reqPath -eq "/home" -or $reqPath -eq "/home.php") {
-                if (Test-Path (Join-Path $root "index.php") -PathType Leaf) {
-                    $reqPath = "/index.php"
-                } else {
-                    $reqPath = "/index.html"
-                }
+            if ($reqPath -eq "" -or $reqPath -eq "/" -or $reqPath -eq "/home" -or $reqPath -eq "/index") {
+                $reqPath = "/index.html"
             }
 
             $relPath = $reqPath.TrimStart("/\").Replace("/", [System.IO.Path]::DirectorySeparatorChar)

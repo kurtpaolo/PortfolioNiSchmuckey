@@ -14,12 +14,12 @@ More details about Freelance Flow here:
 ```
 C:\Users\schmuck\WOW\
 │
-├── index.php               # Home Page
-├── services.php            # Services Page
-├── about.php               # About Page
-├── contact.php             # Contact Page 
-├── app.php                 # My App (Freelance Flow Workspace)
-├── admin.php               # Legacy redirect to index.php
+├── index.html               # Home Page
+├── services.html            # Services Page
+├── about.html               # About Page
+├── contact.html             # Contact Page 
+├── app.html                 # My App (Freelance Flow Workspace)
+├── admin.html               # Legacy redirect to index.html
 ├── serve.ps1               # Local web server script (runs on http://localhost:8000)
 ├── start-server.bat        # One-click website launch (This only works for Windows)
 ├── css/

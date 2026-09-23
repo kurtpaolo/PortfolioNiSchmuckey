@@ -399,7 +399,7 @@ $(document).ready(function () {
   $(document).on('keydown', function (e) {
     if ((e.ctrlKey && e.shiftKey && (e.key === 'A' || e.key === 'a')) || (e.altKey && (e.key === 'A' || e.key === 'a'))) {
       e.preventDefault();
-      window.location.href = 'app.php';
+      window.location.href = 'app.html';
     }
   });
   */
