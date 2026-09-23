@@ -2,6 +2,10 @@
 <html lang="en" class="h-full">
 <head>
   <meta charset="UTF-8">
+  <script>
+    // Temporarily disabled access for job application
+    window.location.replace("index.php");
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Schmuckey</title>
   <meta name="description" content="Freelance Tasks, Deliverables & Revenue Tracker">
@@ -60,7 +64,7 @@
       
       <!-- Top Link back to Portfolio -->
       <div class="mb-4 flex items-center justify-between">
-        <a href="index.html" class="exit-to-portfolio-btn text-xs text-slate-400 hover:text-cyan-400 flex items-center gap-2 transition-colors py-1 px-2 rounded hover:bg-slate-900/60">
+        <a href="index.php" class="exit-to-portfolio-btn text-xs text-slate-400 hover:text-cyan-400 flex items-center gap-2 transition-colors py-1 px-2 rounded hover:bg-slate-900/60">
           <i class="fa-solid fa-arrow-left"></i>
           <span>Go to Public Portfolio</span>
         </a>

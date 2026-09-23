@@ -17,6 +17,7 @@ try {
 }
 
 $mimeTypes = @{
+    ".php"  = "text/html; charset=utf-8"
     ".html" = "text/html; charset=utf-8"
     ".htm"  = "text/html; charset=utf-8"
     ".css"  = "text/css; charset=utf-8"
@@ -43,7 +44,11 @@ try {
         try {
             $reqPath = [System.Uri]::UnescapeDataString($request.Url.AbsolutePath)
             if ($reqPath -eq "" -or $reqPath -eq "/") {
-                $reqPath = "/index.html"
+                if (Test-Path (Join-Path $root "index.php") -PathType Leaf) {
+                    $reqPath = "/index.php"
+                } else {
+                    $reqPath = "/index.html"
+                }
             }
 
             $relPath = $reqPath.TrimStart("/\").Replace("/", [System.IO.Path]::DirectorySeparatorChar)

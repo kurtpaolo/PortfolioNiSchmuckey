@@ -58,7 +58,7 @@
       <div class="flex items-center justify-between h-20">
         
         <!-- Brand Logo -->
-        <a href="index.html" class="flex items-center gap-3 group">
+        <a href="index.php" class="flex items-center gap-3 group">
           <div class="w-11 h-11 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/30 group-hover:scale-105 transition-transform duration-300">
             <i class="fa-solid fa-play text-white text-lg ml-0.5 group-hover:rotate-12 transition-transform"></i>
           </div>
@@ -70,19 +70,21 @@
 
         <!-- Desktop Navigation Links -->
         <nav class="hidden md:flex items-center gap-8 text-sm font-medium">
-          <a href="index.html" class="text-slate-300 hover:text-cyan-400 transition-colors duration-200">Home</a>
-          <a href="services.html" class="text-slate-300 hover:text-cyan-400 transition-colors duration-200">Services</a>
-          <a href="about.html" class="text-cyan-400 font-semibold transition-colors duration-200">About</a>
-          <a href="contact.html" class="text-slate-300 hover:text-cyan-400 transition-colors duration-200">Contact</a>
+          <a href="index.php" class="text-slate-300 hover:text-cyan-400 transition-colors duration-200">Home</a>
+          <a href="services.php" class="text-slate-300 hover:text-cyan-400 transition-colors duration-200">Services</a>
+          <a href="about.php" class="text-cyan-400 font-semibold transition-colors duration-200">About</a>
+          <a href="contact.php" class="text-slate-300 hover:text-cyan-400 transition-colors duration-200">Contact</a>
         </nav>
 
         <!-- App link and Discord button -->
         <div class="hidden md:flex items-center gap-3">
-          <a href="app.html" class="text-xs text-slate-300 hover:text-cyan-300 transition-colors flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/60 border border-slate-700/60 hover:border-cyan-500/40">
+          <!-- Temporarily hidden for job application
+          <a href="app.php" class="text-xs text-slate-300 hover:text-cyan-300 transition-colors flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/60 border border-slate-700/60 hover:border-cyan-500/40">
             <i class="fa-solid fa-layer-group text-[11px] text-cyan-400"></i>
             <span>My App</span>
           </a>
-          <a href="contact.html" class="gradient-btn px-4 py-2 rounded-xl text-sm font-bold text-white shadow-lg flex items-center gap-2">
+          -->
+          <a href="contact.php" class="gradient-btn px-4 py-2 rounded-xl text-sm font-bold text-white shadow-lg flex items-center gap-2">
             <i class="fa-brands fa-discord text-base"></i>
             <span>schmuck404</span>
           </a>
@@ -100,16 +102,18 @@
 
     <!-- Mobile Dropdown Menu -->
     <div id="mobile-nav-menu" class="hidden md:hidden bg-slate-900/95 border-b border-cyan-500/20 px-4 pt-2 pb-6 space-y-3 max-h-[calc(100vh-5rem)] overflow-y-auto">
-      <a href="index.html" class="block px-3 py-2 rounded-md text-base font-medium text-slate-300 hover:text-cyan-400 hover:bg-slate-800/60">Home</a>
-      <a href="services.html" class="block px-3 py-2 rounded-md text-base font-medium text-slate-300 hover:text-cyan-400 hover:bg-slate-800/60">Services</a>
-      <a href="about.html" class="block px-3 py-2 rounded-md text-base font-semibold text-cyan-400 bg-cyan-950/40 border-l-2 border-cyan-400">About</a>
-      <a href="contact.html" class="block px-3 py-2 rounded-md text-base font-medium text-slate-300 hover:text-cyan-400 hover:bg-slate-800/60">Contact</a>
+      <a href="index.php" class="block px-3 py-2 rounded-md text-base font-medium text-slate-300 hover:text-cyan-400 hover:bg-slate-800/60">Home</a>
+      <a href="services.php" class="block px-3 py-2 rounded-md text-base font-medium text-slate-300 hover:text-cyan-400 hover:bg-slate-800/60">Services</a>
+      <a href="about.php" class="block px-3 py-2 rounded-md text-base font-semibold text-cyan-400 bg-cyan-950/40 border-l-2 border-cyan-400">About</a>
+      <a href="contact.php" class="block px-3 py-2 rounded-md text-base font-medium text-slate-300 hover:text-cyan-400 hover:bg-slate-800/60">Contact</a>
       <div class="pt-3 border-t border-slate-800 flex flex-col gap-2">
-        <a href="app.html" class="text-center py-2 px-3 rounded-lg bg-slate-800/80 border border-slate-700/60 hover:border-cyan-500/40 text-xs text-slate-300 hover:text-cyan-300 flex items-center justify-center gap-1.5 font-medium">
+        <!-- Temporarily hidden for job application
+        <a href="app.php" class="text-center py-2 px-3 rounded-lg bg-slate-800/80 border border-slate-700/60 hover:border-cyan-500/40 text-xs text-slate-300 hover:text-cyan-300 flex items-center justify-center gap-1.5 font-medium">
           <i class="fa-solid fa-layer-group text-[11px] text-cyan-400"></i>
           <span>My App</span>
         </a>
-        <a href="contact.html" class="gradient-btn text-center py-2.5 rounded-lg text-sm font-semibold text-white">
+        -->
+        <a href="contact.php" class="gradient-btn text-center py-2.5 rounded-lg text-sm font-semibold text-white">
           <i class="fa-brands fa-discord mr-2"></i>Discord: schmuck404
         </a>
       </div>
@@ -250,19 +254,19 @@
                       <p class="text-[11px] text-slate-400 font-mono truncate sm:overflow-visible">Kurt Paolo D. Redondo &bull; Schmuckey</p>
                     </div>
                   </div>
-                  <span class="px-2.5 py-0.5 rounded-full text-[10px] font-mono bg-cyan-950/70 text-cyan-300 border border-cyan-500/30 flex-shrink-0">BSIT &bull; PUP Biñan</span>
+                  <span class="px-2.5 py-0.5 rounded-full text-[10px] font-mono bg-cyan-950/70 text-cyan-300 border border-cyan-500/30 flex-shrink-0">Video Editor &bull; Content Creator</span>
                 </div>
 
                 <p class="text-slate-300 text-sm leading-relaxed text-justify">
-                  I'm <strong>Kurt Paolo D. Redondo</strong>, 20 years old and based in <strong>Malaban, Biñan, Laguna</strong>. I am currently a 3rd-year <strong>BS Information Technology</strong> student at <strong>PUP Biñan Campus</strong> and a freelance video editor.
+                  I'm <strong>Kurt Paolo D. Redondo</strong>, 20 years old and based in <strong>Malaban, Biñan, Laguna</strong>. I am a freelance <strong>Video Editor</strong> and <strong>Content Creator</strong>.
                 </p>
 
                 <p class="text-slate-300 text-sm leading-relaxed text-justify">
-                  Architecture was originally the plan, but somehow I ended up in IT instead. I’ve been a small creator and an editor for around two years now, mostly working on my own gaming content, and short-form stuff. I like clipping, recording whatever it is that i think is cool or funny and turning it into something that actually feels good to watch.
+                  Architecture was originally the plan, but I found my true passion in content creation and video editing. I’ve been a creator and an editor for around two years now, mostly working on gaming content and short-form stuff. I like clipping, recording whatever it is that i think is cool or funny and turning it into something that actually feels good to watch.
                 </p>
 
                 <p class="text-slate-400 text-xs sm:text-sm leading-relaxed text-justify">
-                  Outside of school and work, I spend most of my time gaming. I play games like <strong>Valorant</strong> and <strong>Wuthering Waves</strong>. I also draw, and read books when I'm really bored.
+                  Outside of work and editing, I spend most of my time gaming. I play games like <strong>Valorant</strong> and <strong>Wuthering Waves</strong>. I also draw, and read books when I'm really bored.
                 </p>
               </div>
 
@@ -358,7 +362,7 @@
         <p class="text-slate-300 text-sm mt-3 mb-6 leading-relaxed">
           I'm always open to new projects, collaborations, and editing gigs.
         </p>
-        <a href="contact.html" class="gradient-btn w-full sm:w-auto px-6 sm:px-8 py-3.5 rounded-xl font-bold text-white inline-flex items-center justify-center gap-2 shadow-lg">
+        <a href="contact.php" class="gradient-btn w-full sm:w-auto px-6 sm:px-8 py-3.5 rounded-xl font-bold text-white inline-flex items-center justify-center gap-2 shadow-lg">
           <i class="fa-brands fa-discord"></i>
           <span>Contact Me</span>
         </a>
@@ -378,10 +382,10 @@
       </div>
 
       <div class="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
-        <a href="index.html" class="hover:text-cyan-300 transition-colors">Home</a>
-        <a href="services.html" class="hover:text-cyan-300 transition-colors">Services</a>
-        <a href="about.html" class="text-cyan-400 font-semibold">About</a>
-        <a href="contact.html" class="hover:text-cyan-300 transition-colors">Contact</a>
+        <a href="index.php" class="hover:text-cyan-300 transition-colors">Home</a>
+        <a href="services.php" class="hover:text-cyan-300 transition-colors">Services</a>
+        <a href="about.php" class="text-cyan-400 font-semibold">About</a>
+        <a href="contact.php" class="hover:text-cyan-300 transition-colors">Contact</a>
         <a href="https://schmuckey.carrd.co" target="_blank" rel="noopener noreferrer" class="hover:text-cyan-300 transition-colors">Carrd</a>
       </div>
 

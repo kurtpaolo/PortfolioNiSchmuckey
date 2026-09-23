@@ -394,13 +394,15 @@ $(document).ready(function () {
     sessionStorage.removeItem('schmuckey_admin_session');
   } catch (e) {}
 
-  // Secret shortcut to open app login: Ctrl + Shift + A or Alt + A
+  // Secret shortcut to open app login (Temporarily disabled for job application)
+  /*
   $(document).on('keydown', function (e) {
     if ((e.ctrlKey && e.shiftKey && (e.key === 'A' || e.key === 'a')) || (e.altKey && (e.key === 'A' || e.key === 'a'))) {
       e.preventDefault();
-      window.location.href = 'app.html';
+      window.location.href = 'app.php';
     }
   });
+  */
 
   // Style select dropdowns so placeholder options look dimmer until selected
   function updateSelectPlaceholderState(sel) {

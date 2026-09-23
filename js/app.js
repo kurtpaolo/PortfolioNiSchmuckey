@@ -60,10 +60,11 @@
       ]
     },
     general: {
-      name: 'General',
-      icon: 'fa-list-check',
+      name: 'General Freelancer',
+      icon: 'fa-briefcase',
       columns: [
-        { id: 'deliverableUrl', label: 'Deliverable Link', type: 'url', icon: 'fa-link', visible: true }
+        { id: 'deliverableUrl', label: 'Deliverable Link', type: 'url', icon: 'fa-link', visible: true },
+        { id: 'notes', label: 'Notes', type: 'text', icon: 'fa-clipboard', visible: true }
       ]
     }
   };
@@ -73,8 +74,16 @@
     currency: '$',
     deadlineAlertDays: 1,
     dismissedAlertDate: '',
-    activeBoardId: '',
-    boards: []
+    activeBoardId: 'video_editor',
+    boards: [
+      {
+        id: 'video_editor',
+        name: 'Video Editor',
+        icon: 'fa-video',
+        presetKey: 'video_editor',
+        columns: JSON.parse(JSON.stringify(DEFAULT_PRESETS.video_editor.columns))
+      }
+    ]
   };
 
   let sidebarAccordionExpanded = true;
@@ -95,7 +104,16 @@
       userSettings.activeBoardId = boards[0].id;
       return boards[0];
     }
-    return null;
+    const fallback = {
+      id: 'video_editor',
+      name: 'Video Editor',
+      icon: 'fa-video',
+      presetKey: 'video_editor',
+      columns: JSON.parse(JSON.stringify(DEFAULT_PRESETS.video_editor.columns))
+    };
+    userSettings.boards = [fallback];
+    userSettings.activeBoardId = fallback.id;
+    return fallback;
   }
 
   async function setActiveBoard(boardId) {
@@ -229,10 +247,10 @@
     } else if (colKey === 'dueDate') {
       optionsHtml = `
         <option value="default" ${!isColActive ? 'selected' : ''}>All</option>
-        <option value="filter_overdue" ${activeFilter === 'overdue' ? 'selected' : ''}>Overdue</option>
-        <option value="filter_today" ${activeFilter === 'today' ? 'selected' : ''}>Today</option>
-        <option value="filter_tomorrow" ${activeFilter === 'tomorrow' ? 'selected' : ''}>Tomorrow</option>
-        <option value="filter_upcoming" ${activeFilter === 'upcoming' ? 'selected' : ''}>Next 7 Days</option>
+        <option value="filter_overdue" ${activeFilter === 'overdue' ? 'selected' : ''}>⚠️ Overdue</option>
+        <option value="filter_today" ${activeFilter === 'today' ? 'selected' : ''}>🔔 Today</option>
+        <option value="filter_tomorrow" ${activeFilter === 'tomorrow' ? 'selected' : ''}>⏰ Tomorrow</option>
+        <option value="filter_upcoming" ${activeFilter === 'upcoming' ? 'selected' : ''}>📅 Next 7d</option>
         <option value="filter_undated" ${activeFilter === 'undated' ? 'selected' : ''}>No Date</option>
         <option disabled>──────────</option>
         <option value="sort_asc" ${isSorted && sortDir === 'asc' ? 'selected' : ''}>Earliest ▲</option>
@@ -264,6 +282,7 @@
           <option value="default" ${!isColActive ? 'selected' : ''}>All</option>
           <option value="filter_has_link" ${activeFilter === 'has_link' ? 'selected' : ''}>Has Link</option>
           <option value="filter_no_link" ${activeFilter === 'no_link' ? 'selected' : ''}>No Link</option>
+          <option value="sort_desc" ${isSorted && sortDir === 'desc' ? 'selected' : ''}>Has Link 1st</option>
         `;
       } else {
         const distinctVals = new Set();
@@ -366,32 +385,6 @@
     return status === 'Paid' || status === 'Completely Paid';
   }
 
-  const USD_TO_PHP_RATE = 56.00; // 1 USD = 56 PHP
-
-  function convertCurrencyAmount(amount, fromCur, toCur) {
-    const val = parseFloat(amount) || 0;
-    if (fromCur === toCur) return val;
-    if (fromCur === '$' && toCur === '₱') {
-      return Math.round(val * USD_TO_PHP_RATE * 100) / 100;
-    }
-    if (fromCur === '₱' && toCur === '$') {
-      return Math.round((val / USD_TO_PHP_RATE) * 100) / 100;
-    }
-    return val;
-  }
-
-  function getEquivalentMoney(amount) {
-    const symbol = userSettings.currency || '$';
-    const val = parseFloat(amount) || 0;
-    if (symbol === '₱') {
-      const usdVal = val / USD_TO_PHP_RATE;
-      return `$${usdVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    } else {
-      const phpVal = val * USD_TO_PHP_RATE;
-      return `₱${phpVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    }
-  }
-
   function formatMoney(amount) {
     const symbol = userSettings.currency || '$';
     const val = parseFloat(amount) || 0;
@@ -462,43 +455,27 @@
         if (s.dismissedAlertDate) userSettings.dismissedAlertDate = s.dismissedAlertDate;
         
         if (Array.isArray(s.boards) && s.boards.length > 0) {
-          userSettings.boards = s.boards.map(b => {
-            if (b.presetKey === 'general' || b.id === 'general') {
-              return {
-                ...b,
-                name: 'General',
-                columns: (b.columns || []).filter(c => c.id !== 'notes')
-              };
-            }
-            return b;
-          });
-          userSettings.activeBoardId = s.activeBoardId || (userSettings.boards[0] ? userSettings.boards[0].id : '');
-        } else if (s.activePreset) {
-          // Backward-compat migration ONLY if legacy activePreset exists
-          const legacyPreset = s.activePreset;
+          userSettings.boards = s.boards;
+          userSettings.activeBoardId = s.activeBoardId || s.boards[0].id;
+        } else {
+          // Backward-compat migration from legacy activePreset and customColumns
+          const legacyPreset = s.activePreset || 'video_editor';
           const legacyColumns = Array.isArray(s.customColumns) && s.customColumns.length > 0
             ? s.customColumns
-            : (DEFAULT_PRESETS[legacyPreset] ? DEFAULT_PRESETS[legacyPreset].columns : []);
+            : (DEFAULT_PRESETS[legacyPreset] ? DEFAULT_PRESETS[legacyPreset].columns : DEFAULT_PRESETS.video_editor.columns);
           
           userSettings.boards = [{
             id: legacyPreset,
-            name: (DEFAULT_PRESETS[legacyPreset] && DEFAULT_PRESETS[legacyPreset].name) || 'Custom Board',
-            icon: (DEFAULT_PRESETS[legacyPreset] && DEFAULT_PRESETS[legacyPreset].icon) || 'fa-briefcase',
+            name: (DEFAULT_PRESETS[legacyPreset] && DEFAULT_PRESETS[legacyPreset].name) || 'Video Editor',
+            icon: (DEFAULT_PRESETS[legacyPreset] && DEFAULT_PRESETS[legacyPreset].icon) || 'fa-video',
             presetKey: legacyPreset,
             columns: JSON.parse(JSON.stringify(legacyColumns))
           }];
           userSettings.activeBoardId = legacyPreset;
-        } else {
-          // Newly made account: start with zero boards so user has full freedom
-          userSettings.boards = [];
-          userSettings.activeBoardId = '';
         }
       }
 
-      window.userSettings = userSettings;
-      window.cachedProjects = cachedProjects;
       renderAll();
-      window.dispatchEvent(new CustomEvent('flowDataLoaded'));
     } catch (err) {
       console.error('Failed to sync data with server:', err);
     }
@@ -651,149 +628,12 @@
   }
 
   // ==========================================
-  // Custom Lil Popup Dialog Modal (Alert / Confirm)
-  // ==========================================
-  let currentDialogResolver = null;
-
-  window.flowAlert = function ({
-    title = 'Notice',
-    message = '',
-    icon = 'fa-triangle-exclamation',
-    type = 'warning',
-    confirmText = 'OK'
-  } = {}) {
-    return new Promise(resolve => {
-      const $modal = document.getElementById('flow-dialog-modal');
-      const $card = document.getElementById('flow-dialog-card');
-      const $iconContainer = document.getElementById('flow-dialog-icon-container');
-      const $icon = document.getElementById('flow-dialog-icon');
-      const $title = document.getElementById('flow-dialog-title');
-      const $msg = document.getElementById('flow-dialog-message');
-      const $btnCancel = document.getElementById('flow-dialog-cancel-btn');
-      const $btnConfirm = document.getElementById('flow-dialog-confirm-btn');
-
-      if (!$modal) {
-        alert(message);
-        resolve(true);
-        return;
-      }
-
-      currentDialogResolver = resolve;
-      if ($title) $title.textContent = title;
-      if ($msg) $msg.innerHTML = message;
-      if ($icon) $icon.className = `fa-solid ${icon}`;
-
-      if (type === 'danger') {
-        if ($card) $card.className = 'w-full max-w-sm flow-card rounded-2xl p-5 border border-rose-500/50 shadow-2xl bg-[#0b0f19] relative';
-        if ($iconContainer) $iconContainer.className = 'w-10 h-10 rounded-xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400 flex-shrink-0 text-base shadow-sm';
-        if ($btnConfirm) $btnConfirm.className = 'px-4 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-mono font-bold transition-colors cursor-pointer shadow-md';
-      } else if (type === 'info') {
-        if ($card) $card.className = 'w-full max-w-sm flow-card rounded-2xl p-5 border border-cyan-500/50 shadow-2xl bg-[#0b0f19] relative';
-        if ($iconContainer) $iconContainer.className = 'w-10 h-10 rounded-xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400 flex-shrink-0 text-base shadow-sm';
-        if ($btnConfirm) $btnConfirm.className = 'btn-flow-primary px-4 py-1.5 rounded-xl text-white text-xs font-mono font-bold transition-colors cursor-pointer shadow-md';
-      } else {
-        // Warning (amber)
-        if ($card) $card.className = 'w-full max-w-sm flow-card rounded-2xl p-5 border border-amber-500/40 shadow-2xl bg-[#0b0f19] relative';
-        if ($iconContainer) $iconContainer.className = 'w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 flex-shrink-0 text-base shadow-sm';
-        if ($btnConfirm) $btnConfirm.className = 'px-4 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-mono font-bold transition-colors cursor-pointer shadow-md';
-      }
-
-      if ($btnConfirm) $btnConfirm.textContent = confirmText;
-      if ($btnCancel) $btnCancel.classList.add('hidden');
-      $modal.classList.remove('hidden');
-    });
-  };
-
-  window.flowConfirm = function ({
-    title = 'Are you sure?',
-    message = '',
-    icon = 'fa-trash-can',
-    type = 'danger',
-    confirmText = 'Delete',
-    cancelText = 'Cancel'
-  } = {}) {
-    return new Promise(resolve => {
-      const $modal = document.getElementById('flow-dialog-modal');
-      const $card = document.getElementById('flow-dialog-card');
-      const $iconContainer = document.getElementById('flow-dialog-icon-container');
-      const $icon = document.getElementById('flow-dialog-icon');
-      const $title = document.getElementById('flow-dialog-title');
-      const $msg = document.getElementById('flow-dialog-message');
-      const $btnCancel = document.getElementById('flow-dialog-cancel-btn');
-      const $btnConfirm = document.getElementById('flow-dialog-confirm-btn');
-
-      if (!$modal) {
-        resolve(confirm(message));
-        return;
-      }
-
-      currentDialogResolver = resolve;
-      if ($title) $title.textContent = title;
-      if ($msg) $msg.innerHTML = message;
-      if ($icon) $icon.className = `fa-solid ${icon}`;
-
-      if (type === 'danger') {
-        if ($card) $card.className = 'w-full max-w-sm flow-card rounded-2xl p-5 border border-rose-500/50 shadow-2xl bg-[#0b0f19] relative';
-        if ($iconContainer) $iconContainer.className = 'w-10 h-10 rounded-xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400 flex-shrink-0 text-base shadow-sm';
-        if ($btnConfirm) $btnConfirm.className = 'px-4 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-mono font-bold transition-colors cursor-pointer shadow-md';
-      } else {
-        if ($card) $card.className = 'w-full max-w-sm flow-card rounded-2xl p-5 border border-cyan-500/50 shadow-2xl bg-[#0b0f19] relative';
-        if ($iconContainer) $iconContainer.className = 'w-10 h-10 rounded-xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400 flex-shrink-0 text-base shadow-sm';
-        if ($btnConfirm) $btnConfirm.className = 'btn-flow-primary px-4 py-1.5 rounded-xl text-white text-xs font-mono font-bold transition-colors cursor-pointer shadow-md';
-      }
-
-      if ($btnConfirm) $btnConfirm.textContent = confirmText;
-      if ($btnCancel) {
-        $btnCancel.textContent = cancelText;
-        $btnCancel.classList.remove('hidden');
-      }
-      $modal.classList.remove('hidden');
-    });
-  };
-
-  function initDialogModal() {
-    const $modal = document.getElementById('flow-dialog-modal');
-    const $btnConfirm = document.getElementById('flow-dialog-confirm-btn');
-    const $btnCancel = document.getElementById('flow-dialog-cancel-btn');
-
-    $btnConfirm?.addEventListener('click', () => {
-      $modal?.classList.add('hidden');
-      if (currentDialogResolver) {
-        const res = currentDialogResolver;
-        currentDialogResolver = null;
-        res(true);
-      }
-    });
-
-    $btnCancel?.addEventListener('click', () => {
-      $modal?.classList.add('hidden');
-      if (currentDialogResolver) {
-        const res = currentDialogResolver;
-        currentDialogResolver = null;
-        res(false);
-      }
-    });
-
-    $modal?.addEventListener('click', (e) => {
-      if (e.target === $modal) {
-        $modal.classList.add('hidden');
-        if (currentDialogResolver) {
-          const res = currentDialogResolver;
-          currentDialogResolver = null;
-          res(false);
-        }
-      }
-    });
-  }
-
-  // ==========================================
   // App Lifecycle & Initialization
   // ==========================================
 
   document.addEventListener('DOMContentLoaded', () => {
     checkSession();
     initClock();
-    initDialogModal();
     initTabNavigation();
     initJobBoardsManagement();
     initProjectManagement();
@@ -829,8 +669,6 @@
 
     if (targetId === 'panel-calendar') {
       renderCalendar();
-    } else if (targetId === 'panel-new-proj') {
-      renderAddTaskPanel();
     }
   }
   window.flowSwitchTab = switchTab;
@@ -840,10 +678,6 @@
       btn.addEventListener('click', (e) => {
         e.preventDefault();
         const target = btn.getAttribute('data-target');
-        if (target === 'panel-new-proj') {
-          // Always require choosing a job board first when clicking navigation tab
-          selectedAddTaskBoardId = null;
-        }
         if (target) switchTab(target);
       });
     });
@@ -856,7 +690,7 @@
         try {
           await fetch('api/auth.php?action=logout', { method: 'POST', credentials: 'same-origin' });
         } catch (err) {}
-        window.location.href = 'index.html';
+        window.location.href = 'index.php';
       });
     });
   }
@@ -1067,12 +901,10 @@
     const $feedback = document.getElementById('security-modal-feedback');
 
     const $tabPrefs = document.getElementById('tab-opt-prefs');
-    const $tabJobs = document.getElementById('tab-opt-jobs');
     const $tabUsername = document.getElementById('tab-opt-username');
     const $tabPassword = document.getElementById('tab-opt-password');
 
     const $formPrefs = document.getElementById('form-workspace-prefs');
-    const $sectionJobs = document.getElementById('section-manage-jobs');
     const $formUsername = document.getElementById('form-change-username');
     const $formPassword = document.getElementById('form-change-password');
 
@@ -1084,7 +916,6 @@
 
       const tabs = [
         { id: 'prefs', tabEl: $tabPrefs, formEl: $formPrefs },
-        { id: 'jobs', tabEl: $tabJobs, formEl: $sectionJobs },
         { id: 'username', tabEl: $tabUsername, formEl: $formUsername },
         { id: 'password', tabEl: $tabPassword, formEl: $formPassword }
       ];
@@ -1093,31 +924,28 @@
         if (!t.tabEl || !t.formEl) return;
         if (t.id === tab) {
           t.formEl.classList.remove('hidden');
-          t.tabEl.className = 'account-setting-tab flex-1 py-2 px-2.5 rounded-lg font-bold transition-all bg-cyan-950 text-cyan-300 border border-cyan-500/40 shadow-sm flex items-center justify-center gap-1.5 cursor-pointer';
+          t.tabEl.className = 'account-setting-tab flex-1 py-2 px-3 rounded-lg font-bold transition-all bg-cyan-950 text-cyan-300 border border-cyan-500/40 shadow-sm flex items-center justify-center gap-2 cursor-pointer';
         } else {
           t.formEl.classList.add('hidden');
-          t.tabEl.className = 'account-setting-tab flex-1 py-2 px-2.5 rounded-lg font-bold transition-all text-slate-400 hover:text-white flex items-center justify-center gap-1.5 cursor-pointer';
+          t.tabEl.className = 'account-setting-tab flex-1 py-2 px-3 rounded-lg font-bold transition-all text-slate-400 hover:text-white flex items-center justify-center gap-2 cursor-pointer';
         }
       });
-
-      if (tab === 'jobs' && typeof renderManageJobsModal === 'function') {
-        renderManageJobsModal();
-      }
     }
 
     if ($tabPrefs) $tabPrefs.addEventListener('click', () => selectTab('prefs'));
-    if ($tabJobs) $tabJobs.addEventListener('click', () => selectTab('jobs'));
     if ($tabUsername) $tabUsername.addEventListener('click', () => selectTab('username'));
     if ($tabPassword) $tabPassword.addEventListener('click', () => selectTab('password'));
 
-    function openModal(defaultTab = 'prefs') {
+    function openModal() {
       const curSelect = document.getElementById('pref-currency-select');
       const alertSelect = document.getElementById('pref-deadline-alert');
+      const presetSelect = document.getElementById('pref-preset-select');
 
       if (curSelect) curSelect.value = userSettings.currency || '$';
       if (alertSelect) alertSelect.value = String(userSettings.deadlineAlertDays !== undefined ? userSettings.deadlineAlertDays : 1);
+      if (presetSelect) presetSelect.value = userSettings.activePreset || 'video_editor';
 
-      selectTab(defaultTab);
+      selectTab('prefs');
       if ($modal) $modal.classList.remove('hidden');
     }
 
@@ -1125,16 +953,7 @@
       if ($modal) $modal.classList.add('hidden');
     }
 
-    window.flowOpenAccountModal = openModal;
-    window.flowCloseAccountModal = closeModal;
-    window.flowOpenManageJobs = function () {
-      openModal('jobs');
-    };
-    window.flowCloseManageJobs = function () {
-      closeModal();
-    };
-
-    if ($btnOpen) $btnOpen.addEventListener('click', () => openModal('prefs'));
+    if ($btnOpen) $btnOpen.addEventListener('click', openModal);
     if ($btnClose) $btnClose.addEventListener('click', closeModal);
     $cancelBtns.forEach(btn => btn.addEventListener('click', closeModal));
 
@@ -1148,48 +967,32 @@
     if ($formPrefs) {
       $formPrefs.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const oldCur = userSettings.currency || '$';
-        const newCur = document.getElementById('pref-currency-select')?.value || '$';
+        const cur = document.getElementById('pref-currency-select')?.value || '$';
         const alertDays = parseInt(document.getElementById('pref-deadline-alert')?.value, 10);
+        const preset = document.getElementById('pref-preset-select')?.value || 'video_editor';
+
+        const updatedSettings = {
+          currency: cur,
+          deadlineAlertDays: isNaN(alertDays) ? 1 : alertDays,
+          activePreset: preset
+        };
+
+        if (preset !== userSettings.activePreset && DEFAULT_PRESETS[preset]) {
+          updatedSettings.customColumns = JSON.parse(JSON.stringify(DEFAULT_PRESETS[preset].columns));
+        }
 
         const btnSpinner = document.getElementById('prefs-btn-spinner');
         const btnText = document.getElementById('prefs-btn-text');
         if (btnSpinner) btnSpinner.classList.remove('hidden');
         if (btnText) btnText.classList.add('hidden');
 
-        // Real-time Currency Conversion:
-        // When changing between USD ($) and PHP (₱), convert existing project rates in DB
-        if (oldCur !== newCur && cachedProjects.length > 0) {
-          for (const proj of cachedProjects) {
-            const convertedPrice = convertCurrencyAmount(proj.price, oldCur, newCur);
-            const convertedBudget = convertCurrencyAmount(proj.budget, oldCur, newCur);
-            const convertedPaid = convertCurrencyAmount(proj.paid_amount, oldCur, newCur);
-
-            proj.price = convertedPrice;
-            proj.budget = convertedBudget;
-            proj.paid_amount = convertedPaid;
-
-            await updateProjectApi(proj.id, {
-              price: convertedPrice,
-              budget: convertedBudget,
-              paid_amount: convertedPaid
-            });
-          }
-        }
-
-        const updatedSettings = {
-          currency: newCur,
-          deadlineAlertDays: isNaN(alertDays) ? 1 : alertDays
-        };
-
         await saveUserSettings(updatedSettings);
 
         if (btnSpinner) btnSpinner.classList.add('hidden');
         if (btnText) btnText.classList.remove('hidden');
 
-        updateCurrencyDisplays();
         renderAll();
-        showFeedback(`Preferences saved! All rates converted to ${newCur === '₱' ? 'PHP (₱)' : 'USD ($)'}.`, false);
+        showFeedback('Preferences saved successfully!', false);
       });
     }
 
@@ -1593,27 +1396,10 @@
     const boards = userSettings.boards || [];
     const activeId = userSettings.activeBoardId;
 
-    if (boards.length === 0) {
-      $tree.innerHTML = `
-        <div class="px-2 py-2">
-          <button 
-            type="button"
-            onclick="window.flowOpenManageJobs()"
-            class="w-full flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-lg text-xs font-mono text-cyan-300 bg-cyan-950/60 hover:bg-cyan-900/80 border border-cyan-500/40 transition-all cursor-pointer shadow-sm shadow-cyan-500/10"
-            title="Choose your freelance disciplines"
-          >
-            <i class="fa-solid fa-plus text-[10px]"></i>
-            <span>Add Job Board</span>
-          </button>
-        </div>
-      `;
-      return;
-    }
-
     // Count tasks per board
     const boardCounts = {};
     cachedProjects.forEach(p => {
-      const bId = p.boardId || (boards[0] ? boards[0].id : '');
+      const bId = p.boardId || 'video_editor';
       boardCounts[bId] = (boardCounts[bId] || 0) + 1;
     });
 
@@ -1642,7 +1428,7 @@
     }).join('');
 
     const isAllActive = activeId === 'all';
-    const allBoardHtml = boards.length > 1 ? `
+    const allBoardHtml = `
       <button 
         type="button" 
         onclick="window.flowSetActiveBoard('all')"
@@ -1660,7 +1446,7 @@
           isAllActive ? 'bg-cyan-900/80 text-cyan-200 border border-cyan-500/40' : 'bg-slate-800/80 text-slate-500 group-hover:text-slate-300'
         }">${cachedProjects.length}</span>
       </button>
-    ` : '';
+    `;
 
     const manageBtnHtml = `
       <button 
@@ -1684,20 +1470,6 @@
     const boards = userSettings.boards || [];
     const activeId = userSettings.activeBoardId;
 
-    if (boards.length === 0) {
-      $container.innerHTML = `
-        <button 
-          type="button" 
-          onclick="window.flowOpenManageJobs()"
-          class="px-3 py-1.5 rounded-xl text-xs font-mono font-bold bg-cyan-950/80 hover:bg-cyan-900 text-cyan-300 border border-cyan-500/40 shadow-md flex items-center gap-1.5 cursor-pointer"
-        >
-          <i class="fa-solid fa-plus"></i>
-          <span>Add Job Board</span>
-        </button>
-      `;
-      return;
-    }
-
     const pillsHtml = boards.map(b => {
       const isActive = activeId === b.id;
       return `
@@ -1717,7 +1489,7 @@
     }).join('');
 
     const isAll = activeId === 'all';
-    const allPillHtml = boards.length > 1 ? `
+    const allPillHtml = `
       <button 
         type="button" 
         onclick="window.flowSetActiveBoard('all')"
@@ -1730,7 +1502,7 @@
         <i class="fa-solid fa-layer-group text-[11px]"></i>
         <span>All Jobs</span>
       </button>
-    ` : '';
+    `;
 
     $container.innerHTML = pillsHtml + allPillHtml;
   }
@@ -1744,15 +1516,6 @@
     const $title = document.getElementById('current-board-title');
     const $desc = document.getElementById('current-board-desc');
     const $subtext = document.getElementById('current-board-subtext');
-
-    if (!activeBoard) {
-      if ($icon) $icon.className = 'fa-solid fa-briefcase';
-      if ($badge) $badge.textContent = 'Workspace';
-      if ($title) $title.textContent = 'Task';
-      if ($subtext) $subtext.textContent = 'Getting Started';
-      if ($desc) $desc.textContent = 'Add your first freelance job board to start tracking tasks and rates.';
-      return;
-    }
 
     if ($icon) $icon.className = `fa-solid ${activeBoard.icon || 'fa-briefcase'}`;
     if ($badge) $badge.textContent = activeBoard.name;
@@ -1777,73 +1540,54 @@
     // Render active boards list
     const $activeList = document.getElementById('manage-active-jobs-list');
     if ($activeList) {
-      if (boards.length === 0) {
-        $activeList.innerHTML = `
-          <div class="p-4 text-center text-slate-500 font-mono text-xs border border-dashed border-slate-800 rounded-xl">
-            No active job boards added yet. Choose a preset below or create a custom board!
-          </div>
-        `;
-      } else {
-        const boardCounts = {};
-        cachedProjects.forEach(p => {
-          const bId = p.boardId || (boards[0] ? boards[0].id : '');
-          boardCounts[bId] = (boardCounts[bId] || 0) + 1;
-        });
+      const boardCounts = {};
+      cachedProjects.forEach(p => {
+        const bId = p.boardId || 'video_editor';
+        boardCounts[bId] = (boardCounts[bId] || 0) + 1;
+      });
 
-        $activeList.innerHTML = boards.map((b) => {
-          const isCurrent = activeId === b.id;
-          const taskCount = boardCounts[b.id] || 0;
-          const unfinishedCount = cachedProjects.filter(p => {
-            const bId = p.boardId || (boards[0] ? boards[0].id : '');
-            if (bId !== b.id) return false;
-            const st = p.status || 'Not Started';
-            return st !== 'Published' && st !== 'Completed';
-          }).length;
+      $activeList.innerHTML = boards.map((b) => {
+        const isCurrent = activeId === b.id;
+        const taskCount = boardCounts[b.id] || 0;
+        const canDelete = boards.length > 1;
 
-          return `
-            <div class="p-3 rounded-xl bg-slate-900 border ${isCurrent ? 'border-cyan-500/40 bg-cyan-950/20' : 'border-slate-800'} flex items-center justify-between gap-3 text-xs font-mono">
-              <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-lg bg-cyan-950/80 border border-cyan-500/30 text-cyan-400 flex items-center justify-center text-sm flex-shrink-0">
-                  <i class="fa-solid ${b.icon || 'fa-briefcase'}"></i>
-                </div>
-                <div>
-                  <div class="font-bold text-white flex items-center gap-2">
-                    <span>${escapeHtml(b.name)}</span>
-                    ${isCurrent ? '<span class="text-[9px] px-1.5 py-0.2 rounded bg-cyan-950 text-cyan-300 border border-cyan-500/30 uppercase">Active</span>' : ''}
-                  </div>
-                  <div class="text-[11px] text-slate-400 mt-0.5">
-                    <span>${taskCount} task${taskCount === 1 ? '' : 's'}</span>
-                    <span class="text-slate-600">&bull;</span>
-                    <span>${(b.columns || []).length} custom column${(b.columns || []).length === 1 ? '' : 's'}</span>
-                    ${unfinishedCount > 0 ? `<span class="text-slate-600">&bull;</span><span class="text-amber-400/90 font-semibold">${unfinishedCount} active</span>` : ''}
-                  </div>
-                </div>
+        return `
+          <div class="p-3 rounded-xl bg-slate-900 border ${isCurrent ? 'border-cyan-500/40 bg-cyan-950/20' : 'border-slate-800'} flex items-center justify-between gap-3 text-xs font-mono">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg bg-cyan-950/80 border border-cyan-500/30 text-cyan-400 flex items-center justify-center text-sm flex-shrink-0">
+                <i class="fa-solid ${b.icon || 'fa-briefcase'}"></i>
               </div>
-              <div class="flex items-center gap-2">
-                ${
-                  !isCurrent 
-                    ? `<button type="button" onclick="window.flowSetActiveBoard('${b.id}'); window.flowCloseManageJobs();" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-cyan-950 hover:text-cyan-300 text-slate-300 text-xs border border-slate-700 transition-colors cursor-pointer">
-                        Switch
-                      </button>`
-                    : `<span class="text-[11px] text-cyan-400 font-bold px-2 py-1">Viewing</span>`
-                }
-                <button 
-                  type="button" 
-                  onclick="window.flowRemoveJobBoard('${b.id}')" 
-                  class="p-1.5 rounded-lg transition-colors cursor-pointer ${
-                    unfinishedCount > 0 
-                      ? 'text-amber-500/70 hover:text-amber-400 hover:bg-amber-950/40' 
-                      : 'text-slate-500 hover:text-rose-400 hover:bg-rose-950/30'
-                  }" 
-                  title="${unfinishedCount > 0 ? `${unfinishedCount} task(s) in progress/not started - complete or delete tasks first` : 'Remove this job board'}"
-                >
-                  <i class="fa-solid fa-trash text-xs"></i>
-                </button>
+              <div>
+                <div class="font-bold text-white flex items-center gap-2">
+                  <span>${escapeHtml(b.name)}</span>
+                  ${isCurrent ? '<span class="text-[9px] px-1.5 py-0.2 rounded bg-cyan-950 text-cyan-300 border border-cyan-500/30 uppercase">Active</span>' : ''}
+                </div>
+                <div class="text-[11px] text-slate-400 mt-0.5">
+                  <span>${taskCount} task${taskCount === 1 ? '' : 's'}</span>
+                  <span class="text-slate-600">&bull;</span>
+                  <span>${(b.columns || []).length} custom column${(b.columns || []).length === 1 ? '' : 's'}</span>
+                </div>
               </div>
             </div>
-          `;
-        }).join('');
-      }
+            <div class="flex items-center gap-2">
+              ${
+                !isCurrent 
+                  ? `<button type="button" onclick="window.flowSetActiveBoard('${b.id}'); window.flowCloseManageJobs();" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-cyan-950 hover:text-cyan-300 text-slate-300 text-xs border border-slate-700 transition-colors cursor-pointer">
+                      Switch
+                    </button>`
+                  : `<span class="text-[11px] text-cyan-400 font-bold px-2 py-1">Viewing</span>`
+              }
+              ${
+                canDelete
+                  ? `<button type="button" onclick="window.flowRemoveJobBoard('${b.id}')" class="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-950/30 transition-colors cursor-pointer" title="Remove this job board">
+                      <i class="fa-solid fa-trash text-xs"></i>
+                    </button>`
+                  : `<span class="p-1.5 text-slate-700 cursor-not-allowed" title="Must keep at least 1 board"><i class="fa-solid fa-lock text-xs"></i></span>`
+              }
+            </div>
+          </div>
+        `;
+      }).join('');
     }
 
     // Render preset library grid
@@ -1949,48 +1693,25 @@
     // Remove job board
     window.flowRemoveJobBoard = async function (boardId) {
       const boards = userSettings.boards || [];
-      const boardToRemove = boards.find(b => b.id === boardId);
-      if (!boardToRemove) return;
-
-      // Check if there are active tasks (In Progress or Not Started) for this board
-      const unfinishedTasks = cachedProjects.filter(p => {
-        const bId = p.boardId || (boards[0] ? boards[0].id : '');
-        if (bId !== boardId) return false;
-        const st = p.status || 'Not Started';
-        return st !== 'Published' && st !== 'Completed';
-      });
-
-      if (unfinishedTasks.length > 0) {
-        await window.flowAlert({
-          title: 'Cannot Delete Board',
-          message: `Cannot remove "${boardToRemove.name}": You still have ${unfinishedTasks.length} active task(s) currently In Progress or Not Started.\n\nPlease finish or delete these active tasks before removing this job board.`,
-          icon: 'fa-triangle-exclamation',
-          type: 'warning',
-          confirmText: 'Understood'
-        });
+      if (boards.length <= 1) {
+        alert('You must have at least one active job board.');
         return;
       }
 
-      const confirmed = await window.flowConfirm({
-        title: 'Remove Job Board',
-        message: `Remove "${boardToRemove.name}" from your active job boards?`,
-        icon: 'fa-trash-can',
-        type: 'danger',
-        confirmText: 'Remove Board'
-      });
+      const boardToRemove = boards.find(b => b.id === boardId);
+      if (!boardToRemove) return;
 
-      if (!confirmed) {
+      if (!confirm(`Remove "${boardToRemove.name}" from your active boards? Any tasks you logged for this board will remain safe in the database.`)) {
         return;
       }
 
       userSettings.boards = boards.filter(b => b.id !== boardId);
       if (userSettings.activeBoardId === boardId) {
-        userSettings.activeBoardId = userSettings.boards[0]?.id || '';
+        userSettings.activeBoardId = userSettings.boards[0]?.id || 'video_editor';
       }
 
       await saveUserSettings(userSettings);
       renderManageJobsModal();
-      renderAddTaskPanel();
       renderAll();
     };
 
@@ -2005,13 +1726,7 @@
         const icon = iconSelect?.value || 'fa-briefcase';
 
         if (!name) {
-          await window.flowAlert({
-            title: 'Name Required',
-            message: 'Please enter a name for your custom job board.',
-            icon: 'fa-circle-exclamation',
-            type: 'warning',
-            confirmText: 'OK'
-          });
+          alert('Please enter a name for your custom job board.');
           return;
         }
 
@@ -2022,7 +1737,8 @@
           name: name,
           icon: icon,
           columns: [
-            { id: 'deliverableUrl', label: 'Deliverable Link', type: 'url', icon: 'fa-link', visible: true }
+            { id: 'deliverableUrl', label: 'Deliverable Link', type: 'url', icon: 'fa-link', visible: true },
+            { id: 'notes', label: 'Notes', type: 'text', icon: 'fa-clipboard', visible: true }
           ]
         };
 
@@ -2053,131 +1769,27 @@
     `).join('');
   }
 
-  // Selected Job Board for Add Task Panel (user must choose a board first)
-  let selectedAddTaskBoardId = null;
-
-  function renderAddTaskPanel(preferredBoardId = null) {
-    const boards = userSettings.boards || [];
-    const $cardsContainer = document.getElementById('add-task-board-cards');
-    const $hint = document.getElementById('add-task-board-status-hint');
-    const $noBoardPrompt = document.getElementById('add-task-no-board-prompt');
-    const $formWrapper = document.getElementById('add-task-form-wrapper');
-    const $boardIdInput = document.getElementById('proj-board-id');
-    const $boardSelect = document.getElementById('proj-board-select');
-
-    if (!$cardsContainer) return;
-
-    if (preferredBoardId && boards.some(b => b.id === preferredBoardId)) {
-      selectedAddTaskBoardId = preferredBoardId;
-    }
-
-    if (boards.length === 0) {
-      selectedAddTaskBoardId = null;
-      $cardsContainer.innerHTML = `
-        <div class="col-span-full flow-card p-8 rounded-2xl border border-dashed border-slate-800 text-center space-y-3">
-          <div class="w-12 h-12 rounded-2xl bg-cyan-950/40 border border-cyan-500/30 text-cyan-400 flex items-center justify-center mx-auto text-lg">
-            <i class="fa-solid fa-layer-group"></i>
-          </div>
-          <div>
-            <h3 class="text-sm font-heading font-bold text-white">No Active Job Boards</h3>
-            <p class="text-xs text-slate-400 mt-1">Add a job board to your account before creating tasks.</p>
-          </div>
-          <button type="button" onclick="window.flowOpenManageJobs()" class="btn-flow-primary px-4 py-2 rounded-xl text-white font-bold text-xs cursor-pointer shadow-md inline-flex items-center gap-1.5">
-            <i class="fa-solid fa-plus"></i>
-            <span>Choose Job Boards</span>
-          </button>
-        </div>
-      `;
-      if ($hint) $hint.textContent = '0 active boards';
-      if ($noBoardPrompt) $noBoardPrompt.classList.add('hidden');
-      if ($formWrapper) $formWrapper.classList.add('hidden');
-      return;
-    }
-
-    // Populate sync board select
-    if ($boardSelect) {
-      $boardSelect.innerHTML = boards.map(b => `<option value="${b.id}">${escapeHtml(b.name)}</option>`).join('');
-    }
-
-    // Render cards strictly for ONLY the freelancer's active boards
-    $cardsContainer.innerHTML = boards.map(b => {
-      const isSelected = selectedAddTaskBoardId === b.id;
-      const customColCount = (b.columns || []).filter(c => c.visible !== false).length;
-      return `
-        <button 
-          type="button" 
-          onclick="window.flowSelectAddTaskBoard('${b.id}')"
-          class="add-task-board-card group p-3.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2.5 ${
-            isSelected 
-              ? 'bg-cyan-950/70 border-cyan-400 text-white shadow-lg shadow-cyan-500/10 ring-1 ring-cyan-400' 
-              : 'bg-slate-900/90 hover:bg-slate-800/90 border-slate-800 hover:border-slate-700 text-slate-300'
-          }"
-        >
-          <div class="flex items-center justify-between">
-            <div class="w-7 h-7 rounded-lg ${isSelected ? 'bg-cyan-500/20 text-cyan-400' : 'bg-slate-800 text-slate-400 group-hover:text-cyan-300'} flex items-center justify-center text-xs transition-colors">
-              <i class="fa-solid ${b.icon || 'fa-briefcase'}"></i>
-            </div>
-            ${isSelected ? '<span class="text-cyan-400 text-xs"><i class="fa-solid fa-circle-check"></i></span>' : '<span class="w-2 h-2 rounded-full bg-slate-700 group-hover:bg-cyan-400 transition-colors"></span>'}
-          </div>
-          <div>
-            <div class="text-xs font-heading font-bold ${isSelected ? 'text-white' : 'text-slate-200 group-hover:text-white'} truncate">${escapeHtml(b.name)}</div>
-            <div class="text-[10px] font-mono text-slate-400">${customColCount} custom field${customColCount === 1 ? '' : 's'}</div>
-          </div>
-        </button>
-      `;
-    }).join('');
-
-    if (selectedAddTaskBoardId && boards.some(b => b.id === selectedAddTaskBoardId)) {
-      const activeB = boards.find(b => b.id === selectedAddTaskBoardId);
-      if ($hint) $hint.textContent = `Selected: ${activeB.name}`;
-      if ($boardIdInput) $boardIdInput.value = selectedAddTaskBoardId;
-      if ($boardSelect) $boardSelect.value = selectedAddTaskBoardId;
-
-      const $icon = document.getElementById('add-task-active-icon');
-      const $name = document.getElementById('add-task-active-board-name');
-      if ($icon) $icon.className = `fa-solid ${activeB.icon || 'fa-briefcase'}`;
-      if ($name) $name.textContent = `${activeB.name} Deliverable`;
-
-      if ($noBoardPrompt) $noBoardPrompt.classList.add('hidden');
-      if ($formWrapper) $formWrapper.classList.remove('hidden');
-      renderCustomFieldInputs('proj-custom-fields-container', {}, selectedAddTaskBoardId);
-    } else {
-      if ($hint) $hint.textContent = 'Pick a board to show form';
-      if ($noBoardPrompt) $noBoardPrompt.classList.remove('hidden');
-      if ($formWrapper) $formWrapper.classList.add('hidden');
-      const customContainer = document.getElementById('proj-custom-fields-container');
-      if (customContainer) customContainer.innerHTML = '';
-    }
-  }
-
-  window.flowSelectAddTaskBoard = function (boardId) {
-    selectedAddTaskBoardId = boardId;
-    renderAddTaskPanel(boardId);
-    const $title = document.getElementById('proj-title');
-    if ($title) setTimeout(() => $title.focus(), 100);
-  };
-
   function initProjectManagement() {
     // Add new task form
     const $newProjForm = document.getElementById('new-project-form');
     if ($newProjForm) {
       $newProjForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const boards = userSettings.boards || [];
-        const boardId = selectedAddTaskBoardId || (boards[0] ? boards[0].id : 'video_editor');
-        const board = boards.find(b => b.id === boardId);
-        const boardName = board ? board.name : 'Freelance';
-
+        const boardSelect = document.getElementById('proj-board-select');
+        const boardId = boardSelect ? boardSelect.value : (userSettings.activeBoardId !== 'all' ? userSettings.activeBoardId : 'video_editor');
         const title = document.getElementById('proj-title').value.trim();
         const clientName = document.getElementById('proj-client-name').value.trim() || 'Client';
+        const service = document.getElementById('proj-service')?.value.trim() || 'Freelance';
         const price = parseFloat(document.getElementById('proj-budget').value) || 0;
         const dueDate = document.getElementById('proj-due-date')?.value || '';
         const status = document.getElementById('proj-status')?.value || 'In Progress';
         const payment = document.getElementById('proj-payment')?.value || 'Unpaid';
+        const rawUrl = document.getElementById('proj-raw-url')?.value.trim() || '';
+        const finalUrl = document.getElementById('proj-final-url')?.value.trim() || '';
 
         const customFields = getCustomFieldValues('proj-custom-fields-container');
-        const rawUrl = customFields.rawFilesUrl || '';
-        const finalUrl = customFields.youtubeLink || '';
+        if (rawUrl) customFields.rawFilesUrl = rawUrl;
+        if (finalUrl) customFields.youtubeLink = finalUrl;
 
         const isPaid = payment === 'Paid';
         const paidAmount = isPaid ? price : 0;
@@ -2187,7 +1799,7 @@
           boardId,
           title,
           clientName,
-          service: boardName,
+          service,
           price,
           budget: price,
           paidAmount,
@@ -2200,11 +1812,18 @@
         });
 
         $newProjForm.reset();
-        selectedAddTaskBoardId = null;
-        userSettings.activeBoardId = boardId;
-        await saveUserSettings(userSettings);
-        renderAll();
+        const activeB = userSettings.activeBoardId !== 'all' ? userSettings.activeBoardId : (userSettings.boards[0]?.id || 'video_editor');
+        populateBoardSelect('proj-board-select', activeB);
+        renderCustomFieldInputs('proj-custom-fields-container', {}, activeB);
         switchTab('panel-projects');
+      });
+    }
+
+    // Dynamic field update when board dropdown changes in Add Task form
+    const $projBoardSelect = document.getElementById('proj-board-select');
+    if ($projBoardSelect) {
+      $projBoardSelect.addEventListener('change', (e) => {
+        renderCustomFieldInputs('proj-custom-fields-container', {}, e.target.value);
       });
     }
 
@@ -2262,11 +1881,10 @@
         e.preventDefault();
         const editId = document.getElementById('edit-video-id')?.value;
         const boardSelect = document.getElementById('modal-proj-board-select');
-        const boardId = boardSelect ? boardSelect.value : (userSettings.boards[0]?.id || 'video_editor');
-        const board = (userSettings.boards || []).find(b => b.id === boardId);
-        const boardName = board ? board.name : 'Freelance';
+        const boardId = boardSelect ? boardSelect.value : 'video_editor';
         const title = document.getElementById('input-video-title').value.trim();
         const client = document.getElementById('input-video-client').value.trim() || 'Client';
+        const service = document.getElementById('input-video-service')?.value.trim() || 'Freelance';
         const status = document.getElementById('input-video-status').value || 'Not Started';
         const price = parseFloat(document.getElementById('input-video-price').value) || 0;
         const dueDate = document.getElementById('input-video-due-date')?.value || '';
@@ -2282,7 +1900,7 @@
             boardId,
             title,
             clientName: client,
-            service: boardName,
+            service,
             status,
             budget: price,
             price,
@@ -2306,6 +1924,7 @@
     const $idInput = document.getElementById('edit-video-id');
     const $titleInput = document.getElementById('input-video-title');
     const $clientInput = document.getElementById('input-video-client');
+    const $serviceInput = document.getElementById('input-video-service');
     const $statusInput = document.getElementById('input-video-status');
     const $priceInput = document.getElementById('input-video-price');
     const $dueInput = document.getElementById('input-video-due-date');
@@ -2315,13 +1934,14 @@
     if ($idInput) $idInput.value = p.id;
     if ($titleInput) $titleInput.value = p.title || '';
     if ($clientInput) $clientInput.value = p.clientName || '';
+    if ($serviceInput) $serviceInput.value = p.service || 'Freelance';
     if ($statusInput) $statusInput.value = p.status || 'Not Started';
     if ($priceInput) $priceInput.value = p.budget || p.price || 0;
     if ($dueInput) $dueInput.value = p.dueDate || '';
     if ($paymentInput) $paymentInput.value = isPaidStatus(p.paymentStatus) ? 'Paid' : 'Unpaid';
     if ($heading) $heading.textContent = 'Edit Task';
 
-    const taskBoardId = p.boardId || (userSettings.boards[0]?.id || 'video_editor');
+    const taskBoardId = p.boardId || 'video_editor';
     populateBoardSelect('modal-proj-board-select', taskBoardId);
 
     // Populate dynamic custom field inputs
@@ -2339,23 +1959,11 @@
     if ($modal) $modal.classList.add('hidden');
   };
 
-  window.flowOpenAddVideo = function (prefilledDate = '', preferredBoardId = null) {
-    const boards = userSettings.boards || [];
-    if (boards.length === 0) {
-      window.flowAlert({
-        title: 'No Job Boards',
-        message: 'Please add at least one Job Board before creating tasks.',
-        icon: 'fa-layer-group',
-        type: 'info',
-        confirmText: 'Add Board'
-      }).then(() => {
-        window.flowOpenManageJobs();
-      });
-      return;
-    }
+  window.flowOpenAddVideo = function (prefilledDate = '') {
     switchTab('panel-new-proj');
-    const defaultBoard = preferredBoardId || (userSettings.activeBoardId !== 'all' ? userSettings.activeBoardId : (boards[0]?.id || ''));
-    window.flowSelectAddTaskBoard(defaultBoard);
+    const defaultBoard = userSettings.activeBoardId !== 'all' ? userSettings.activeBoardId : (userSettings.boards[0]?.id || 'video_editor');
+    populateBoardSelect('proj-board-select', defaultBoard);
+    renderCustomFieldInputs('proj-custom-fields-container', {}, defaultBoard);
     const $due = document.getElementById('proj-due-date');
     if ($due) {
       $due.value = prefilledDate || '';
@@ -2410,14 +2018,7 @@
 
   // Delete project
   window.flowDeleteProject = async function (id) {
-    const confirmed = await window.flowConfirm({
-      title: 'Delete Task',
-      message: 'Are you sure you want to delete this task from your tracker?',
-      icon: 'fa-trash-can',
-      type: 'danger',
-      confirmText: 'Delete Task'
-    });
-    if (confirmed) {
+    if (confirm('Are you sure you want to delete this task?')) {
       await deleteProjectApi(id);
     }
   };
@@ -2457,43 +2058,13 @@
     const $container = document.getElementById('sheet-table-container');
     if (!$container) return;
 
-    const boards = userSettings.boards || [];
     const activeBoard = getActiveBoard();
     const isMasterView = userSettings.activeBoardId === 'all';
     
-    // Show onboarding card if no boards exist yet
-    if (boards.length === 0 || !activeBoard) {
-      const $projCount = document.getElementById('project-total-count');
-      const $projPaid = document.getElementById('project-paid-amount');
-      const $projUnpaid = document.getElementById('project-unpaid-amount');
-
-      if ($projCount) $projCount.textContent = `0 Tasks`;
-      if ($projPaid) $projPaid.textContent = formatMoney(0);
-      if ($projUnpaid) $projUnpaid.textContent = formatMoney(0);
-
-      $container.innerHTML = `
-        <div class="flow-card p-10 sm:p-14 rounded-2xl border border-cyan-500/25 text-center space-y-4 max-w-lg mx-auto my-8">
-          <div class="w-16 h-16 rounded-2xl bg-cyan-950/60 border border-cyan-500/40 text-cyan-400 flex items-center justify-center mx-auto text-2xl shadow-lg shadow-cyan-500/10">
-            <i class="fa-solid fa-layer-group"></i>
-          </div>
-          <div>
-            <h3 class="text-xl font-heading font-bold text-white">No Job Boards Added Yet</h3>
-            <p class="text-xs text-slate-400 mt-1">Get started by choosing the type of freelance work you do, or create a custom board.</p>
-          </div>
-          <div class="pt-2">
-            <button onclick="window.flowOpenManageJobs()" class="btn-flow-primary px-5 py-2.5 rounded-xl text-white font-bold text-xs transition-colors cursor-pointer shadow-lg shadow-cyan-500/20">
-              <i class="fa-solid fa-plus mr-1.5"></i> Choose Your Job Boards
-            </button>
-          </div>
-        </div>
-      `;
-      return;
-    }
-
     // Filter projects exclusively for the active job board (or all in master view)
     const boardProjects = isMasterView
       ? cachedProjects
-      : cachedProjects.filter(p => (p.boardId || (boards[0]?.id || '')) === userSettings.activeBoardId);
+      : cachedProjects.filter(p => (p.boardId || 'video_editor') === userSettings.activeBoardId);
 
     // Show empty state card if no tasks exist for this board
     if (boardProjects.length === 0) {
@@ -2537,13 +2108,11 @@
         allProjectsUnpaid += price;
       }
 
-      // 1. Search Query Filter (strictly Title and Status, including 'delivered')
+      // 1. Search Query Filter
       if (projectSearchQuery) {
-        const rawStatus = p.status || 'Not Started';
-        const isDelivered = rawStatus === 'Published' || rawStatus === 'Completed';
-        const statusAlias = isDelivered ? 'delivered published completed' : rawStatus;
-        const searchStr = `${p.title || ''} ${statusAlias}`.toLowerCase();
-        if (!searchStr.includes(projectSearchQuery)) continue;
+        const customValues = Object.values(p.customFields || {}).join(' ');
+        const str = `${p.title || ''} ${p.clientName || ''} ${p.status || ''} ${p.service || ''} ${p.dueDate || ''} ${customValues}`.toLowerCase();
+        if (!str.includes(projectSearchQuery)) continue;
       }
 
       // 2. Column Filter: Status
@@ -3097,18 +2666,9 @@
     if ($btnDeleteEvent) {
       $btnDeleteEvent.addEventListener('click', async () => {
         const id = document.getElementById('edit-event-id')?.value;
-        if (id) {
-          const confirmed = await window.flowConfirm({
-            title: 'Delete Event',
-            message: 'Are you sure you want to delete this calendar event?',
-            icon: 'fa-trash-can',
-            type: 'danger',
-            confirmText: 'Delete Event'
-          });
-          if (confirmed) {
-            await deleteCalendarEventApi(id);
-            closeEventModal();
-          }
+        if (id && confirm('Delete this calendar event?')) {
+          await deleteCalendarEventApi(id);
+          closeEventModal();
         }
       });
     }
@@ -3546,7 +3106,6 @@
     renderCalendar();
     renderRevenueOverview();
     checkDeadlineAlerts();
-    renderAddTaskPanel();
   }
 
 })();

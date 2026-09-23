@@ -270,7 +270,7 @@
         try {
           await fetch('api/auth.php?action=logout', { method: 'POST', credentials: 'same-origin' });
         } catch (err) {}
-        window.location.href = 'index.html';
+        window.location.href = 'index.php';
       });
     });
 
